@@ -46,6 +46,13 @@ struct ProfileView: View {
                 } else if session.userId == user.id {
                     Button("Sign Out") { session.clear() }
                         .buttonStyle(.bordered)
+                    
+                    // Allow the signed-in user to mark this device as trusted so future launches skip forced login
+                    Button("Trust this device (skip forced login)") {
+                        session.setForceFreshLogin(false)
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .tint(.blue)
                 }
 
                 Text("Posts")

@@ -3,7 +3,7 @@ import SwiftUI
 struct ContentView: View {
     @Environment(\.sessionStore) private var session: SessionStore
     @Environment(\.postsStore) private var postsStore: PostsStore
-    @State private var showingLogin = false
+    // Show login while there is no validated session/user
     @State private var selection: Int = 0
 
     private var currentUser: User {
@@ -33,25 +33,15 @@ struct ContentView: View {
                 .tag(3)
         }
         .onAppear {
-            // Show login until we have a validated session and a userId
-            showingLogin = !(session.isValidSession && session.userId != nil)
             if session.isValidSession && session.userId != nil { Task { await postsStore.loadInitial() } }
         }
         .onChange(of: session.userId) { new in
-            showingLogin = !(session.isValidSession && new != nil)
-            if new != nil {
-                selection = 1
-                Task { await postsStore.loadInitial() }
-            }
+            if new != nil { selection = 1; Task { await postsStore.loadInitial() } }
         }
         .onChange(of: session.isValidSession) { valid in
-            showingLogin = !(valid && session.userId != nil)
-            if valid && session.userId != nil {
-                selection = 1
-                Task { await postsStore.loadInitial() }
-            }
+            if valid && session.userId != nil { selection = 1; Task { await postsStore.loadInitial() } }
         }
-        .fullScreenCover(isPresented: $showingLogin) {
+        .fullScreenCover(isPresented: Binding(get: { session.forceFreshLogin || !(session.isValidSession && session.userId != nil) }, set: { _ in })) {
             LoginView()
         }
     }
