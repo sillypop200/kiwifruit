@@ -84,6 +84,7 @@ final class RESTAPIClient: APIClientProtocol {
         }
         let (data, _) = try await session.data(for: req)
         let decoder = JSONDecoder()
+        decoder.keyDecodingStrategy = .convertFromSnakeCase
         decoder.dateDecodingStrategy = .iso8601
         return try decoder.decode([Post].self, from: data)
     }
@@ -134,6 +135,7 @@ final class RESTAPIClient: APIClientProtocol {
 
         let (data, _) = try await session.data(for: req)
         let decoder = JSONDecoder()
+        decoder.keyDecodingStrategy = .convertFromSnakeCase
         decoder.dateDecodingStrategy = .iso8601
         return try decoder.decode(Post.self, from: data)
     }
@@ -169,17 +171,36 @@ final class RESTAPIClient: APIClientProtocol {
         req.httpBody = try JSONSerialization.data(withJSONObject: body)
 
         let (data, _) = try await session.data(for: req)
-        // Expect { "token": "...", "user": { ... } }
+        // Expect { "token": "...", "user": { ... } } or variations (userId, id)
         let decoder = JSONDecoder()
+        decoder.keyDecodingStrategy = .convertFromSnakeCase
         decoder.dateDecodingStrategy = .iso8601
-        let wrapper = try JSONSerialization.jsonObject(with: data) as? [String: Any]
-        guard let token = wrapper?["token"] as? String,
-              let userDict = wrapper?["user"] as? [String: Any],
-              let userData = try? JSONSerialization.data(withJSONObject: userDict) else {
+        let wrapperAny = try JSONSerialization.jsonObject(with: data)
+        guard let wrapper = wrapperAny as? [String: Any], let token = wrapper["token"] as? String else {
             throw URLError(.badServerResponse)
         }
-        let user = try decoder.decode(User.self, from: userData)
-        return (token: token, user: user)
+
+        // Case 1: server returned full `user` object
+        if let userDict = wrapper["user"] as? [String: Any],
+           let userData = try? JSONSerialization.data(withJSONObject: userDict) {
+            let user = try decoder.decode(User.self, from: userData)
+            return (token: token, user: user)
+        }
+
+        // Case 2: server returned an id (userId / user_id / id). Create a minimal User so client doesn't crash.
+        if let idStr = (wrapper["userId"] as? String) ?? (wrapper["user_id"] as? String) ?? (wrapper["id"] as? String) {
+            if let uuid = UUID(uuidString: idStr) {
+                let user = User(id: uuid, username: "", displayName: nil, avatarURL: nil)
+                return (token: token, user: user)
+            } else {
+                // fallback: create a placeholder UUID to satisfy the model
+                let user = User(id: UUID(), username: "", displayName: nil, avatarURL: nil)
+                return (token: token, user: user)
+            }
+        }
+
+        // Unknown shape
+        throw URLError(.badServerResponse)
     }
 }
 

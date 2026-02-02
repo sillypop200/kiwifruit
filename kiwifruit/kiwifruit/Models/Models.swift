@@ -15,6 +15,20 @@ struct Post: Identifiable, Codable, Hashable {
     let caption: String?
     var likes: Int
     let createdAt: Date
+    // Optional fields returned by the server for the MVP shape
+    var commentCount: Int?
+    var likedByMe: Bool?
+
+    enum CodingKeys: String, CodingKey {
+        case id
+        case author
+        case imageURL = "image_url"
+        case caption
+        case likes = "like_count"
+        case createdAt = "created_at"
+        case commentCount = "comment_count"
+        case likedByMe = "liked_by_me"
+    }
 }
 
 struct Comment: Identifiable, Codable, Hashable {
