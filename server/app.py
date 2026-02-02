@@ -94,7 +94,36 @@ def posts_handler():
     postid = str(uuid.uuid4())
     db.execute('INSERT INTO posts (postid, owner, filename, caption) VALUES (?, ?, ?, ?)', (postid, username, uuid_basename, caption))
     db.commit()
-    return jsonify({'status': 'ok', 'postId': postid})
+    # Return the created post in the same shape as GET /posts so clients can decode it.
+    row = db.execute('SELECT p.postid, p.filename, p.owner, p.caption, p.created, u.userid, u.username, u.fullname, u.filename as userfile FROM posts p JOIN users u ON u.username = p.owner WHERE p.postid = ?', (postid,)).fetchone()
+    if not row:
+        return jsonify({'status': 'ok', 'postId': postid})
+    # Build author dict
+    owner = {
+        'id': row['userid'],
+        'username': row['username'],
+        'displayName': row['fullname'],
+        'avatarURL': request.host_url.rstrip('/') + '/uploads/' + (row['userfile'] or 'default.jpg')
+    }
+    imageURL = request.host_url.rstrip('/') + '/uploads/' + row['filename']
+    likes = db.execute('SELECT COUNT(*) as c FROM likes WHERE postid = ?', (postid,)).fetchone()['c']
+    created = row['created']
+    # Convert SQLite timestamp to ISO8601 for client decoding
+    try:
+        from datetime import datetime
+        created = datetime.strptime(created, '%Y-%m-%d %H:%M:%S').isoformat()
+    except Exception:
+        # leave as-is if parsing fails
+        pass
+    post = {
+        'id': str(postid),
+        'author': owner,
+        'imageURL': imageURL,
+        'caption': row['caption'],
+        'likes': likes,
+        'createdAt': created
+    }
+    return jsonify(post)
 
 @app.route('/posts/<post_id>/like', methods=['POST', 'DELETE'])
 def post_like(post_id):

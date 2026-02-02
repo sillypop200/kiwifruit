@@ -15,3 +15,5 @@ struct kiwifruitApp: App {
         }
     }
 }
+
+// Removed debug-only MockAPIClient override so app uses REST client by default.
