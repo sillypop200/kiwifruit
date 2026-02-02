@@ -158,4 +158,6 @@ def get_username_from_token(req):
 if __name__ == '__main__':
     if not os.path.exists(DB_PATH):
         init_db()
-    app.run(debug=True, host='0.0.0.0', port=5000)
+    # Allow overriding the port with the environment (useful for running on non-default ports)
+    port = int(os.environ.get('PORT', '5000'))
+    app.run(debug=True, host='0.0.0.0', port=port)

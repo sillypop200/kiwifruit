@@ -12,7 +12,10 @@ final class SessionStore {
 
     let apiClient: RESTAPIClient
 
-    init(baseURL: URL = URL(string: "https://api.kiwifruit.example.com")!) {
+    // Default to local dev server. Change `baseURL` when pointing to a deployed API.
+    // If your Flask server runs on a different port (e.g. 50001), set that here
+    // or set the `KIWIFRUIT_API_URL` env var and pass it when creating the store.
+    init(baseURL: URL = URL(string: "http://127.0.0.1:5001")!) {
         self.apiClient = RESTAPIClient(baseURL: baseURL)
         load()
         // Ensure global API client uses this REST client by default
