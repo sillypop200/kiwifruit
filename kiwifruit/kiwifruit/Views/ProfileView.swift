@@ -170,7 +170,8 @@ struct ProfileView: View {
         .task {
             await loadFollowLists()
         }
-    
+    }
+
     // Load followers/following lists and compute following state
     private func loadFollowLists() async {
         do {
