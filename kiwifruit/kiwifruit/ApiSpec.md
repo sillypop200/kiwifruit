@@ -1,33 +1,36 @@
-# KiwiFruit API Spec (Minimal)
+# KiwiFruit API Spec (server-backed MVP)
 
-Base URL: `https://api.kiwifruit.example.com`
+Base URL: `http://localhost:5000` (development)
 
-Authentication: Bearer token in `Authorization` header (Bearer <token>). For early development, endpoints may be public.
+Authentication: Bearer token in `Authorization` header (Bearer <token>). Some endpoints may be public for early development.
 
 ---
 
-## Endpoints
+## Supported Endpoints (MVP)
 
 - GET /posts?page={page}&pageSize={pageSize}
-  - Returns paginated list of posts. Each post contains `id`, `author`, `imageURL`, `caption`, `likes`, `createdAt`.
-
-- GET /users/{userId}
-  - Returns a `User` object by id.
+  - Returns a paginated list of posts. Each post contains `id`, `author`, `imageURL`, `caption`, `likes`, `createdAt`.
 
 - POST /sessions
-  - Create a reading session. Body: `{ "userId": "...", "bookId": "...", "durationMinutes": 30 }`.
-
-- GET /books?query=...
-  - Search books.
-
-- GET /streaks/{userId}
-  - Returns reading streak info for user.
-
-- GET /challenges
-  - List active challenges.
+  - Create or retrieve a session for a username. Body: JSON `{ "username": "alice" }`. Returns `{ "token": "...", "userId": "..." }`.
 
 - POST /posts
-  - Create a reflection post. Body: `{ "authorId": "...", "imageURL": "...", "caption": "..." }`.
+  - Create a new post. Expects `multipart/form-data` with `file` (image) and optional `caption` field. Requires `Authorization` header.
+
+- POST /posts/{postId}/like
+  - Like a post. Requires `Authorization` header. Returns `{ "likes": <count> }`.
+
+- DELETE /posts/{postId}/like
+  - Remove like. Requires `Authorization` header. Returns `{ "likes": <count> }`.
+
+- POST /comments
+  - Manage comments via `operation` form field. For create: `operation=create`, `postid`, `text`. For delete: `operation=delete`, `commentid`. Requires `Authorization` header.
+
+- GET /users/{userId}
+  - Retrieve user profile (minimal fields).
+
+- GET /uploads/{filename}
+  - Serve uploaded image files.
 
 ---
 
@@ -35,60 +38,25 @@ Authentication: Bearer token in `Authorization` header (Bearer <token>). For ear
 
 ```json
 {
-  "id": "7c9e6679-7425-40de-944b-e07fc1f90ae7",
+  "id": 123,
   "author": {
-    "id": "...",
-    "username": "reader1",
-    "displayName": "Reader One",
-    "avatarURL": "https://..."
+    "id": "user-uuid",
+    "username": "alice",
+    "displayName": "Alice Example",
+    "avatarURL": "http://localhost:5000/uploads/default.jpg"
   },
-  "imageURL": "https://...",
-  "caption": "Loved this passage about curiosity.",
-  "likes": 12,
+  "imageURL": "http://localhost:5000/uploads/abcd1234.jpg",
+  "caption": "Lovely day for kiwis!",
+  "likes": 4,
   "createdAt": "2026-01-30T12:34:56Z"
 }
 ```
 
 ---
 
-## Flask Example (very small)
+Notes for frontend wiring
 
-```python
-from flask import Flask, jsonify, request
-from uuid import uuid4
+- Use `GET /posts` to populate the feed; use `page` and `pageSize` for pagination.
+- Use `POST /sessions` with `{ "username": "..." }` to get a `token`, persist it locally, and send `Authorization: Bearer <token>` on protected requests.
+- Use `POST /posts` with `multipart/form-data` to upload images.
 
-app = Flask(__name__)
-
-@app.route('/posts')
-def posts():
-    page = int(request.args.get('page', 0))
-    page_size = int(request.args.get('pageSize', 10))
-    # In real app: query DB. Here return mock data.
-    items = []
-    for i in range(page_size):
-        items.append({
-            'id': str(uuid4()),
-            'author': {
-                'id': str(uuid4()),
-                'username': 'kiwi_botanist',
-                'displayName': 'Kiwi Lover',
-                'avatarURL': 'https://picsum.photos/seed/avatar/100'
-            },
-            'imageURL': f'https://picsum.photos/seed/kiwi{page*page_size + i}/600/600',
-            'caption': f'Fresh kiwi vibes #{page*page_size + i}',
-            'likes': 5,
-            'createdAt': '2026-01-01T00:00:00Z'
-        })
-    return jsonify(items)
-
-if __name__ == '__main__':
-    app.run(debug=True)
-```
-
----
-
-## Notes for frontend wiring
-
-- Use `GET /posts` to populate feed; page and pageSize for infinite scroll.
-- Use `POST /posts` to create reflection posts.
-- Store minimal user session locally (token) and send `Authorization` header.

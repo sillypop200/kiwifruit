@@ -11,9 +11,9 @@ CREATE TABLE users (
     created DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
--- Create posts table
+-- Create posts table (use UUID strings for IDs)
 CREATE TABLE posts (
-    postid INTEGER PRIMARY KEY AUTOINCREMENT,
+    postid TEXT PRIMARY KEY,
     filename TEXT NOT NULL CHECK (LENGTH(filename) <= 64),
     owner TEXT NOT NULL CHECK (LENGTH(owner) <= 20),
     caption TEXT,
@@ -31,22 +31,22 @@ CREATE TABLE following (
     FOREIGN KEY (username2) REFERENCES users (username) ON DELETE CASCADE
 );
 
--- Create comments table
+-- Create comments table (use UUID strings for IDs)
 CREATE TABLE comments (
-    commentid INTEGER PRIMARY KEY AUTOINCREMENT,
+    commentid TEXT PRIMARY KEY,
     owner TEXT NOT NULL CHECK (LENGTH(owner) <= 20),
-    postid INTEGER NOT NULL,
+    postid TEXT NOT NULL,
     text TEXT NOT NULL CHECK (LENGTH(text) <= 1024),
     created DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (owner) REFERENCES users (username) ON DELETE CASCADE,
     FOREIGN KEY (postid) REFERENCES posts (postid) ON DELETE CASCADE
 );
 
--- Create likes table
+-- Create likes table (use UUID strings for IDs)
 CREATE TABLE likes (
-    likeid INTEGER PRIMARY KEY AUTOINCREMENT,
+    likeid TEXT PRIMARY KEY,
     owner TEXT NOT NULL CHECK (LENGTH(owner) <= 20),
-    postid INTEGER NOT NULL,
+    postid TEXT NOT NULL,
     created DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (owner) REFERENCES users (username) ON DELETE CASCADE,
     FOREIGN KEY (postid) REFERENCES posts (postid) ON DELETE CASCADE

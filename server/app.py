@@ -46,8 +46,9 @@ def create_session():
     # create user if not exists with placeholder fields
     cur = db.execute('SELECT username FROM users WHERE username = ?', (username,))
     if not cur.fetchone():
+        # Use standard UUID string format for user IDs so clients can parse as UUID
         db.execute('INSERT INTO users (userid, username, fullname, email, filename, password) VALUES (?, ?, ?, ?, ?, ?)',
-                   (uuid.uuid4().hex, username, username, f'{username}@example.com', 'default.jpg', ''))
+                   (str(uuid.uuid4()), username, username, f'{username}@example.com', 'default.jpg', ''))
         db.commit()
     db.execute('INSERT INTO sessions (token, username) VALUES (?, ?)', (token, username))
     db.commit()
@@ -89,11 +90,13 @@ def posts_handler():
     filepath = os.path.join(app.config['UPLOAD_FOLDER'], uuid_basename)
     file.save(filepath)
     caption = request.form.get('caption')
-    db.execute('INSERT INTO posts (owner, filename, caption) VALUES (?, ?, ?)', (username, uuid_basename, caption))
+    # create post id as standard UUID string
+    postid = str(uuid.uuid4())
+    db.execute('INSERT INTO posts (postid, owner, filename, caption) VALUES (?, ?, ?, ?)', (postid, username, uuid_basename, caption))
     db.commit()
-    return jsonify({'status': 'ok'})
+    return jsonify({'status': 'ok', 'postId': postid})
 
-@app.route('/posts/<int:post_id>/like', methods=['POST', 'DELETE'])
+@app.route('/posts/<post_id>/like', methods=['POST', 'DELETE'])
 def post_like(post_id):
     username = get_username_from_token(request)
     if not username:
@@ -103,7 +106,8 @@ def post_like(post_id):
     if request.method == 'POST':
         if like_exists:
             abort(409)
-        db.execute('INSERT INTO likes (owner, postid) VALUES (?, ?)', (username, post_id))
+        # create like id as UUID string
+        db.execute('INSERT INTO likes (likeid, owner, postid) VALUES (?, ?, ?)', (str(uuid.uuid4()), username, post_id))
         db.commit()
     else:
         if not like_exists:
@@ -125,7 +129,8 @@ def comments_handler():
         if not text or not postid:
             abort(400)
         db = get_db()
-        db.execute('INSERT INTO comments (owner, postid, text) VALUES (?, ?, ?)', (username, postid, text))
+        # create comment id as UUID string
+        db.execute('INSERT INTO comments (commentid, owner, postid, text) VALUES (?, ?, ?, ?)', (str(uuid.uuid4()), username, postid, text))
         db.commit()
         return jsonify({'status': 'ok'})
     if operation == 'delete':
