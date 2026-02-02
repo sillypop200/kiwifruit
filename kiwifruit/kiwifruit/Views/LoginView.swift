@@ -31,12 +31,8 @@ struct LoginView: View {
                         .disabled(username.isEmpty || password.isEmpty)
                     }
                 }
-
                 ToolbarItem(placement: .cancellationAction) {
-                    HStack {
-                        Button("Create Account") { showingSignUp = true }
-                        Button("Cancel") { dismiss() }
-                    }
+                    Button("Create Account") { showingSignUp = true }
                 }
             }
             .sheet(isPresented: $showingSignUp) { SignUpView() }

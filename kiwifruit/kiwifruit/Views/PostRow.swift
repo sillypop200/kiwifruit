@@ -44,16 +44,18 @@ struct PostRow: View {
                 Spacer()
             }
 
-            AsyncImage(url: post.imageURL) { phase in
-                switch phase {
-                case .empty:
-                    ZStack { Color(.systemGray5); ProgressView() }
-                case .success(let image):
-                    image.resizable().scaledToFill()
-                case .failure:
-                    ZStack { Color(.systemGray4); Image(systemName: "photo") }
-                @unknown default:
-                    EmptyView()
+            NavigationLink(destination: PostDetailView(post: post)) {
+                AsyncImage(url: post.imageURL) { phase in
+                    switch phase {
+                    case .empty:
+                        ZStack { Color(.systemGray5); ProgressView() }
+                    case .success(let image):
+                        image.resizable().scaledToFill()
+                    case .failure:
+                        ZStack { Color(.systemGray4); Image(systemName: "photo") }
+                    @unknown default:
+                        EmptyView()
+                    }
                 }
             }
             .frame(maxWidth: .infinity)
