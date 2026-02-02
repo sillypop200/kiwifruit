@@ -84,9 +84,12 @@ struct PostRow: View {
                     .font(.body)
             }
 
-            Text(post.createdAt, style: .time)
-                .font(.caption2)
-                .foregroundColor(.secondary)
+            // Safely unwrap optional createdAt
+            if let createdAt = post.createdAt {
+                Text(createdAt, style: .time)
+                    .font(.caption2)
+                    .foregroundColor(.secondary)
+            }
         }
         .padding(.vertical, 8)
     }
