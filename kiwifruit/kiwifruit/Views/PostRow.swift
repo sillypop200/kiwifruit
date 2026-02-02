@@ -6,12 +6,19 @@ struct PostRow: View {
     @Environment(\.postsStore) private var postsStore: PostsStore
     @Environment(\.sessionStore) private var session: SessionStore
     @State private var showingComments = false
+    @Environment(\.commentsStore) private var commentsStore: CommentsStore
 
     // Whether current device/user liked this post (local store)
     var isLiked: Bool { likesStore.isLiked(post) }
 
-    // Displayed likes combines server count with local optimistic like
-    var displayedLikes: Int { post.likes + (isLiked ? 1 : 0) }
+    // Displayed likes: use server count plus optimistic +1 only while pending
+    var displayedLikes: Int {
+        if likesStore.isPending(post) {
+            return post.likes + (isLiked ? 1 : 0)
+        } else {
+            return post.likes
+        }
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -96,6 +103,27 @@ struct PostRow: View {
                     .font(.body)
             }
 
+            // Inline comments (show all fetched comments for this post)
+            let inlineComments = commentsStore.comments(for: post)
+            if !inlineComments.isEmpty {
+                VStack(alignment: .leading, spacing: 6) {
+                    ForEach(inlineComments) { c in
+                        HStack(alignment: .top, spacing: 8) {
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(c.author.displayName ?? c.author.username)
+                                    .font(.subheadline)
+                                    .bold()
+                                Text(c.text)
+                                    .font(.body)
+                            }
+                            Spacer()
+                        }
+                        .padding(.vertical, 4)
+                    }
+                }
+                .padding(.top, 4)
+            }
+
             // Safely unwrap optional createdAt
             if let createdAt = post.createdAt {
                 Text(createdAt, style: .time)
@@ -104,22 +132,30 @@ struct PostRow: View {
             }
         }
         .padding(.vertical, 8)
+        .task {
+            await commentsStore.fetchForPost(post)
+        }
     }
 
     // Toggle like with optimistic UI: update local LikesStore first, then call API and reconcile server count.
     private func toggleLike() async {
+        // Prevent re-entrant like ops and track optimistic state
+        likesStore.markPending(post.id)
         likesStore.toggle(post)
         do {
-                if likesStore.isLiked(post) {
-                    let updated = try await AppAPI.shared.likePost(post.id)
-                    postsStore.updateLikes(postId: post.id, likes: updated)
-                } else {
-                    let updated = try await AppAPI.shared.unlikePost(post.id)
-                    postsStore.updateLikes(postId: post.id, likes: updated)
-                }
+            if likesStore.isLiked(post) {
+                let updated = try await AppAPI.shared.likePost(post.id)
+                likesStore.clearPending(post.id)
+                postsStore.updateLikes(postId: post.id, likes: updated)
+            } else {
+                let updated = try await AppAPI.shared.unlikePost(post.id)
+                likesStore.clearPending(post.id)
+                postsStore.updateLikes(postId: post.id, likes: updated)
+            }
         } catch {
-            // On failure, rollback local optimistic like
+            // On failure, rollback local optimistic like and clear pending
             likesStore.toggle(post)
+            likesStore.clearPending(post.id)
             print("Like/unlike failed: \(error)")
         }
     }

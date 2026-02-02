@@ -285,6 +285,57 @@ def get_user(username):
     return jsonify(user)
 
 
+@app.route('/users/<username>/follow', methods=['POST', 'DELETE'])
+def follow_user(username):
+    # POST to follow, DELETE to unfollow; requires auth
+    current = get_username_from_token(request)
+    if not current:
+        abort(403)
+    if current == username:
+        # cannot follow yourself
+        abort(400)
+    db = get_db()
+    # ensure target exists
+    if not db.execute('SELECT 1 FROM users WHERE username = ?', (username,)).fetchone():
+        abort(404)
+    if request.method == 'POST':
+        try:
+            db.execute('INSERT INTO following (follower, followee) VALUES (?, ?)', (current, username))
+            db.commit()
+        except sqlite3.IntegrityError:
+            # already following or constraint violation
+            pass
+        return jsonify({'status': 'ok'})
+    else:
+        db.execute('DELETE FROM following WHERE follower = ? AND followee = ?', (current, username))
+        db.commit()
+        return jsonify({'status': 'ok'})
+
+
+@app.route('/users/<username>/followers', methods=['GET'])
+def get_followers(username):
+    db = get_db()
+    if not db.execute('SELECT 1 FROM users WHERE username = ?', (username,)).fetchone():
+        abort(404)
+    rows = db.execute('SELECT u.username, u.fullname, u.filename FROM following f JOIN users u ON u.username = f.follower WHERE f.followee = ? ORDER BY f.created DESC', (username,)).fetchall()
+    out = []
+    for r in rows:
+        out.append({'id': r['username'], 'username': r['username'], 'displayName': r['fullname'], 'avatarURL': request.host_url.rstrip('/') + '/uploads/' + (r['filename'] or 'default.jpg')})
+    return jsonify(out)
+
+
+@app.route('/users/<username>/following', methods=['GET'])
+def get_following(username):
+    db = get_db()
+    if not db.execute('SELECT 1 FROM users WHERE username = ?', (username,)).fetchone():
+        abort(404)
+    rows = db.execute('SELECT u.username, u.fullname, u.filename FROM following f JOIN users u ON u.username = f.followee WHERE f.follower = ? ORDER BY f.created DESC', (username,)).fetchall()
+    out = []
+    for r in rows:
+        out.append({'id': r['username'], 'username': r['username'], 'displayName': r['fullname'], 'avatarURL': request.host_url.rstrip('/') + '/uploads/' + (r['filename'] or 'default.jpg')})
+    return jsonify(out)
+
+
 @app.route('/users', methods=['POST'])
 def create_user():
     data = request.get_json() or {}

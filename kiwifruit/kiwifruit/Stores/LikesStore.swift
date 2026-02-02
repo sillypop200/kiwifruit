@@ -4,6 +4,8 @@ import Observation
 @Observable
 final class LikesStore {
     private(set) var likedIDs: Set<String> = []
+    // optimistic pending like operations (post ids)
+    private(set) var pendingIDs: Set<String> = []
 
     private let key = "kiwifruit.likedIDs"
 
@@ -23,6 +25,16 @@ final class LikesStore {
         }
         save()
     }
+
+    func markPending(_ postId: String) {
+        pendingIDs.insert(postId)
+    }
+
+    func clearPending(_ postId: String) {
+        pendingIDs.remove(postId)
+    }
+
+    func isPending(_ post: Post) -> Bool { pendingIDs.contains(post.id) }
 
     private func save() {
         let arr = Array(likedIDs)

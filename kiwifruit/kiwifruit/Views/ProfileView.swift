@@ -10,6 +10,13 @@ struct ProfileView: View {
     private let columns = [GridItem(.flexible()), GridItem(.flexible())]
     @Environment(\.sessionStore) private var session: SessionStore
     @State private var showingLogin = false
+    @State private var showingCreate = false
+    @State private var followers: [User] = []
+    @State private var following: [User] = []
+    @State private var isFollowing: Bool = false
+    @State private var followPending: Bool = false
+    @State private var showingFollowersSheet = false
+    @State private var showingFollowingSheet = false
 
     var body: some View {
         ScrollView {
@@ -39,13 +46,42 @@ struct ProfileView: View {
                     Spacer()
                 }
 
-                if session.userId == nil {
-                    Button("Sign In") { showingLogin = true }
-                        .buttonStyle(.borderedProminent)
-                        .tint(.green)
-                } else if session.userId == user.id {
-                    Button("Sign Out") { session.clear() }
-                        .buttonStyle(.bordered)
+                HStack(spacing: 12) {
+                    VStack(alignment: .leading) {
+                        Button(action: { showingFollowersSheet = true }) {
+                            Text("Followers: \(followers.count)")
+                        }
+                        .buttonStyle(.plain)
+                        Button(action: { showingFollowingSheet = true }) {
+                            Text("Following: \(following.count)")
+                        }
+                        .buttonStyle(.plain)
+                    }
+
+                    Spacer()
+
+                    if session.userId == nil {
+                        Button("Sign In") { showingLogin = true }
+                            .buttonStyle(.borderedProminent)
+                            .tint(.green)
+                    } else if session.userId == user.id {
+                        HStack(spacing: 8) {
+                            Button(action: { showingCreate = true }) {
+                                Image(systemName: "plus.app")
+                                Text("New Post")
+                            }
+                            .buttonStyle(.borderedProminent)
+
+                            Button("Sign Out") { session.clear() }
+                                .buttonStyle(.bordered)
+                        }
+                    } else {
+                        Button(action: { Task { await toggleFollow() } }) {
+                            Text(isFollowing ? "Unfollow" : "Follow")
+                        }
+                        .disabled(followPending)
+                        .buttonStyle(isFollowing ? .bordered : .borderedProminent)
+                    }
                 }
 
                 Text("Posts")
@@ -77,6 +113,90 @@ struct ProfileView: View {
         .sheet(isPresented: $showingLogin) {
             LoginView()
         }
+        .sheet(isPresented: $showingCreate) {
+            CreatePostView(isPresented: $showingCreate) { post in
+                postsStore.prepend(post)
+            }
+            .environment(\.postsStore, postsStore)
+        }
+        .sheet(isPresented: $showingFollowersSheet) {
+            NavigationStack {
+                List(followers) { u in
+                    HStack {
+                        AsyncImage(url: u.avatarURL) { ph in
+                            if let image = ph.image {
+                                image.resizable().scaledToFill()
+                            } else {
+                                Image(systemName: "person.crop.circle.fill")
+                            }
+                        }
+                        .frame(width: 36, height: 36)
+                        .clipShape(Circle())
+                        Text(u.displayName ?? u.username)
+                    }
+                }
+                .navigationTitle("Followers")
+                .toolbar { ToolbarItem(placement: .cancellationAction) { Button("Close") { showingFollowersSheet = false } } }
+            }
+        }
+        .sheet(isPresented: $showingFollowingSheet) {
+            NavigationStack {
+                List(following) { u in
+                    HStack {
+                        AsyncImage(url: u.avatarURL) { ph in
+                            if let image = ph.image {
+                                image.resizable().scaledToFill()
+                            } else {
+                                Image(systemName: "person.crop.circle.fill")
+                            }
+                        }
+                        .frame(width: 36, height: 36)
+                        .clipShape(Circle())
+                        Text(u.displayName ?? u.username)
+                    }
+                }
+                .navigationTitle("Following")
+                .toolbar { ToolbarItem(placement: .cancellationAction) { Button("Close") { showingFollowingSheet = false } } }
+            }
+        }
+        .task {
+            await loadFollowLists()
+        }
+    
+    // Load followers/following lists and compute following state
+    private func loadFollowLists() async {
+        do {
+            let f = try await AppAPI.shared.fetchFollowers(username: user.username)
+            let fo = try await AppAPI.shared.fetchFollowing(username: user.username)
+            DispatchQueue.main.async {
+                self.followers = f
+                self.following = fo
+                if let cur = session.userId {
+                    self.isFollowing = f.contains(where: { $0.id == cur })
+                } else {
+                    self.isFollowing = false
+                }
+            }
+        } catch {
+            print("loadFollowLists failed: \(error)")
+        }
+    }
+
+    private func toggleFollow() async {
+        guard let cur = session.userId else { return }
+        followPending = true
+        defer { followPending = false }
+        do {
+            if isFollowing {
+                try await AppAPI.shared.unfollowUser(user.username)
+            } else {
+                try await AppAPI.shared.followUser(user.username)
+            }
+            await loadFollowLists()
+        } catch {
+            print("toggleFollow failed: \(error)")
+        }
+    }
     }
 }
 

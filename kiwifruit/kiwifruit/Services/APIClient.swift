@@ -17,6 +17,10 @@ protocol APIClientProtocol {
     func createAccount(username: String, password: String, fullname: String?) async throws -> User
     func likePost(_ postId: String) async throws -> Int
     func unlikePost(_ postId: String) async throws -> Int
+    func followUser(_ username: String) async throws -> Void
+    func unfollowUser(_ username: String) async throws -> Void
+    func fetchFollowers(username: String) async throws -> [User]
+    func fetchFollowing(username: String) async throws -> [User]
     func fetchComments(postId: String) async throws -> [Comment]
     func createComment(postId: String, text: String) async throws -> Void
     func deleteComment(commentId: String) async throws -> Void
@@ -45,10 +49,46 @@ final class MockAPIClient: APIClientProtocol {
 
     func likePost(_ postId: String) async throws -> Int { try await Task.sleep(nanoseconds: 80 * 1_000_000); return Int.random(in: 1...500) }
     func unlikePost(_ postId: String) async throws -> Int { try await Task.sleep(nanoseconds: 80 * 1_000_000); return Int.random(in: 0...499) }
+    func followUser(_ username: String) async throws -> Void { try await Task.sleep(nanoseconds: 40 * 1_000_000); return }
+    func unfollowUser(_ username: String) async throws -> Void { try await Task.sleep(nanoseconds: 40 * 1_000_000); return }
+    func fetchFollowers(username: String) async throws -> [User] { try await Task.sleep(nanoseconds: 60 * 1_000_000); return [] }
+    func fetchFollowing(username: String) async throws -> [User] { try await Task.sleep(nanoseconds: 60 * 1_000_000); return [] }
 
     func createSession(username: String, password: String) async throws -> (token: String, user: User) {
         try await Task.sleep(nanoseconds: 120 * 1_000_000)
         return (token: UUID().uuidString, user: MockData.sampleUser)
+    }
+
+    func followUser(_ username: String) async throws -> Void {
+        let url = baseURL.appendingPathComponent("/users/").appendingPathComponent(username).appendingPathComponent("follow")
+        var req = URLRequest(url: url); req.httpMethod = "POST"
+        if let token = authToken { req.addValue("Bearer \(token)", forHTTPHeaderField: "Authorization") }
+        _ = try await session.data(for: req)
+    }
+
+    func unfollowUser(_ username: String) async throws -> Void {
+        let url = baseURL.appendingPathComponent("/users/").appendingPathComponent(username).appendingPathComponent("follow")
+        var req = URLRequest(url: url); req.httpMethod = "DELETE"
+        if let token = authToken { req.addValue("Bearer \(token)", forHTTPHeaderField: "Authorization") }
+        _ = try await session.data(for: req)
+    }
+
+    func fetchFollowers(username: String) async throws -> [User] {
+        let url = baseURL.appendingPathComponent("/users/").appendingPathComponent(username).appendingPathComponent("followers")
+        var req = URLRequest(url: url)
+        if let token = authToken { req.addValue("Bearer \(token)", forHTTPHeaderField: "Authorization") }
+        let (data, _) = try await session.data(for: req)
+        let decoder = JSONDecoder(); decoder.keyDecodingStrategy = .convertFromSnakeCase; decoder.dateDecodingStrategy = .iso8601
+        return try decoder.decode([User].self, from: data)
+    }
+
+    func fetchFollowing(username: String) async throws -> [User] {
+        let url = baseURL.appendingPathComponent("/users/").appendingPathComponent(username).appendingPathComponent("following")
+        var req = URLRequest(url: url)
+        if let token = authToken { req.addValue("Bearer \(token)", forHTTPHeaderField: "Authorization") }
+        let (data, _) = try await session.data(for: req)
+        let decoder = JSONDecoder(); decoder.keyDecodingStrategy = .convertFromSnakeCase; decoder.dateDecodingStrategy = .iso8601
+        return try decoder.decode([User].self, from: data)
     }
 
     func createAccount(username: String, password: String, fullname: String?) async throws -> User {
