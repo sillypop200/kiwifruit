@@ -10,7 +10,7 @@ final class SessionStore {
     
 
     private(set) var token: String? = nil
-    private(set) var userId: UUID? = nil
+    private(set) var userId: String? = nil
     private(set) var currentUser: User? = nil
     // Whether the saved token/session has been validated against the server
     private(set) var isValidSession: Bool = false
@@ -32,13 +32,11 @@ final class SessionStore {
             Task {
                 do {
                     let user = try await fetchUser(id: userId)
-                    // update stored user and mark session valid
                     DispatchQueue.main.async {
                         self.currentUser = user
                         self.isValidSession = true
                     }
                 } catch {
-                    // invalid token or user no longer exists — clear stored session
                     DispatchQueue.main.async {
                         self.clear()
                     }
@@ -52,7 +50,7 @@ final class SessionStore {
         self.currentUser = user
         self.userId = user?.id
         UserDefaults.standard.set(token, forKey: tokenKey)
-        UserDefaults.standard.set(user?.id.uuidString, forKey: userKey)
+        UserDefaults.standard.set(user?.id, forKey: userKey)
         if let user = user, let encoded = try? JSONEncoder().encode(user) {
             UserDefaults.standard.set(encoded, forKey: userJSONKey)
         } else {
@@ -61,7 +59,7 @@ final class SessionStore {
         apiClient.setAuthToken(token)
         AppAPI.shared = apiClient
         isValidSession = true
-        print("SessionStore.save: saved token=\(token.prefix(8)).. userId=\(user?.id.uuidString ?? "<nil>") username=\(user?.username ?? "<nil>")")
+        print("SessionStore.save: saved token=\(token.prefix(8)).. userId=\(user?.id ?? "<nil>") username=\(user?.username ?? "<nil>")")
     }
 
     func clear() {
@@ -73,7 +71,8 @@ final class SessionStore {
         UserDefaults.standard.removeObject(forKey: userKey)
         UserDefaults.standard.removeObject(forKey: userJSONKey)
         apiClient.setAuthToken(nil)
-        AppAPI.shared = MockAPIClient()
+        // Keep the REST client as the shared API so login/sign-up still talk to the backend.
+        AppAPI.shared = apiClient
         print("SessionStore.clear: cleared session")
     }
 
@@ -81,21 +80,21 @@ final class SessionStore {
         if let token = UserDefaults.standard.string(forKey: tokenKey) {
             self.token = token
         }
-        if let userIdStr = UserDefaults.standard.string(forKey: userKey), let uuid = UUID(uuidString: userIdStr) {
-            self.userId = uuid
+        if let userIdStr = UserDefaults.standard.string(forKey: userKey) {
+            self.userId = userIdStr
         }
         if let data = UserDefaults.standard.data(forKey: userJSONKey) {
             if let user = try? JSONDecoder().decode(User.self, from: data) {
                 self.currentUser = user
             }
         }
-        print("SessionStore.load: token=\(token != nil ? "present" : "nil") userId=\(userId?.uuidString ?? "nil") currentUser=\(currentUser?.username ?? "nil")")
+        print("SessionStore.load: token=\(token != nil ? "present" : "nil") userId=\(userId ?? "nil") currentUser=\(currentUser?.username ?? "nil")")
     }
 
-    // Fetch a user by UUID using the REST client; throws on network or decode errors
-    private func fetchUser(id: UUID) async throws -> User {
+    // Fetch a user by id (string) using the REST client; throws on network or decode errors
+    private func fetchUser(id: String) async throws -> User {
         let url = apiClient.baseURL.appendingPathComponent("/users/")
-            .appendingPathComponent(id.uuidString)
+            .appendingPathComponent(id)
         var req = URLRequest(url: url)
         if let token = token { req.addValue("Bearer \(token)", forHTTPHeaderField: "Authorization") }
         let (data, _) = try await apiClient.session.data(for: req)

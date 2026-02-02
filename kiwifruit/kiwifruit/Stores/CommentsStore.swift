@@ -6,7 +6,7 @@ import SwiftUI
 @Observable @MainActor
 final class CommentsStore {
     private let key = "kiwifruit.comments"
-    private(set) var commentsByPost: [UUID: [Comment]] = [:]
+    private(set) var commentsByPost: [String: [Comment]] = [:]
 
     init() { load() }
 
@@ -15,7 +15,7 @@ final class CommentsStore {
     }
 
     func addLocalComment(_ text: String, post: Post, author: User) {
-        let c = Comment(id: UUID(), postId: post.id, author: author, text: text, createdAt: Date())
+        let c = Comment(id: UUID().uuidString, postId: post.id, author: author, text: text, createdAt: Date())
         commentsByPost[post.id, default: []].append(c)
         save()
     }
@@ -59,7 +59,7 @@ final class CommentsStore {
     private func load() {
         guard let data = UserDefaults.standard.data(forKey: key) else { return }
         let decoder = JSONDecoder()
-        if let decoded = try? decoder.decode([UUID: [Comment]].self, from: data) {
+        if let decoded = try? decoder.decode([String: [Comment]].self, from: data) {
             commentsByPost = decoded
         }
     }

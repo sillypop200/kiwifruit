@@ -45,7 +45,7 @@ final class PostsStore {
     }
 
     /// Update likes count for a post (server-driven)
-    func updateLikes(postId: UUID, likes: Int) {
+    func updateLikes(postId: String, likes: Int) {
         if let idx = posts.firstIndex(where: { $0.id == postId }) {
             var p = posts[idx]
             p.likes = likes
@@ -54,7 +54,7 @@ final class PostsStore {
     }
 
     /// Remove a post locally (after server deletion)
-    func removePost(postId: UUID) {
+    func removePost(postId: String) {
         posts.removeAll(where: { $0.id == postId })
     }
 

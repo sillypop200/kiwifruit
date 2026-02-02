@@ -12,15 +12,15 @@ fileprivate extension Data {
 protocol APIClientProtocol {
     func fetchPosts(page: Int, pageSize: Int) async throws -> [Post]
     /// Create a post. `imageData` is optional; if provided the client should upload it.
-    func createPost(authorId: UUID, imageData: Data?, caption: String?) async throws -> Post
+    func createPost(authorId: String, imageData: Data?, caption: String?) async throws -> Post
     func createSession(username: String, password: String) async throws -> (token: String, user: User)
     func createAccount(username: String, password: String, fullname: String?) async throws -> User
-    func likePost(_ postId: UUID) async throws -> Int
-    func unlikePost(_ postId: UUID) async throws -> Int
-    func fetchComments(postId: UUID) async throws -> [Comment]
-    func createComment(postId: UUID, text: String) async throws -> Void
-    func deleteComment(commentId: UUID) async throws -> Void
-    func deletePost(_ postId: UUID) async throws -> Void
+    func likePost(_ postId: String) async throws -> Int
+    func unlikePost(_ postId: String) async throws -> Int
+    func fetchComments(postId: String) async throws -> [Comment]
+    func createComment(postId: String, text: String) async throws -> Void
+    func deleteComment(commentId: String) async throws -> Void
+    func deletePost(_ postId: String) async throws -> Void
 }
 
 /// Simple in-memory/mock client used in previews and when no backend is configured.
@@ -30,7 +30,7 @@ final class MockAPIClient: APIClientProtocol {
         return MockData.makePosts(count: pageSize, page: page)
     }
 
-    func createPost(authorId: UUID, imageData: Data?, caption: String?) async throws -> Post {
+    func createPost(authorId: String, imageData: Data?, caption: String?) async throws -> Post {
         try await Task.sleep(nanoseconds: 150 * 1_000_000)
         let imageURL: URL
         if let data = imageData {
@@ -40,11 +40,11 @@ final class MockAPIClient: APIClientProtocol {
         } else {
             imageURL = URL(string: "https://picsum.photos/seed/kiwi/600/600")!
         }
-        return Post(id: UUID(), author: MockData.sampleUser, imageURL: imageURL, caption: caption, likes: 0, createdAt: Date())
+        return Post(id: UUID().uuidString, author: MockData.sampleUser, imageURL: imageURL, caption: caption, likes: 0, createdAt: Date())
     }
 
-    func likePost(_ postId: UUID) async throws -> Int { try await Task.sleep(nanoseconds: 80 * 1_000_000); return Int.random(in: 1...500) }
-    func unlikePost(_ postId: UUID) async throws -> Int { try await Task.sleep(nanoseconds: 80 * 1_000_000); return Int.random(in: 0...499) }
+    func likePost(_ postId: String) async throws -> Int { try await Task.sleep(nanoseconds: 80 * 1_000_000); return Int.random(in: 1...500) }
+    func unlikePost(_ postId: String) async throws -> Int { try await Task.sleep(nanoseconds: 80 * 1_000_000); return Int.random(in: 0...499) }
 
     func createSession(username: String, password: String) async throws -> (token: String, user: User) {
         try await Task.sleep(nanoseconds: 120 * 1_000_000)
@@ -56,10 +56,10 @@ final class MockAPIClient: APIClientProtocol {
         return MockData.sampleUser
     }
 
-    func fetchComments(postId: UUID) async throws -> [Comment] { try await Task.sleep(nanoseconds: 80 * 1_000_000); return MockData.makeComments(for: postId) }
-    func createComment(postId: UUID, text: String) async throws -> Void { try await Task.sleep(nanoseconds: 80 * 1_000_000); return }
-    func deleteComment(commentId: UUID) async throws -> Void { try await Task.sleep(nanoseconds: 60 * 1_000_000); return }
-    func deletePost(_ postId: UUID) async throws -> Void { try await Task.sleep(nanoseconds: 120 * 1_000_000); return }
+    func fetchComments(postId: String) async throws -> [Comment] { try await Task.sleep(nanoseconds: 80 * 1_000_000); return MockData.makeComments(for: postId) }
+    func createComment(postId: String, text: String) async throws -> Void { try await Task.sleep(nanoseconds: 80 * 1_000_000); return }
+    func deleteComment(commentId: String) async throws -> Void { try await Task.sleep(nanoseconds: 60 * 1_000_000); return }
+    func deletePost(_ postId: String) async throws -> Void { try await Task.sleep(nanoseconds: 120 * 1_000_000); return }
 }
 
 /// A simple REST API client implementation using URLSession and async/await.
@@ -94,7 +94,7 @@ final class RESTAPIClient: APIClientProtocol {
         return try decoder.decode([Post].self, from: data)
     }
 
-    func createPost(authorId: UUID, imageData: Data?, caption: String?) async throws -> Post {
+    func createPost(authorId: String, imageData: Data?, caption: String?) async throws -> Post {
         let url = baseURL.appendingPathComponent("/posts")
         var req = URLRequest(url: url); req.httpMethod = "POST"
         if let token = authToken { req.addValue("Bearer \(token)", forHTTPHeaderField: "Authorization") }
@@ -105,7 +105,7 @@ final class RESTAPIClient: APIClientProtocol {
             var body = Data()
             body.appendString("--\(boundary)\r\n")
             body.appendString("Content-Disposition: form-data; name=\"authorId\"\r\n\r\n")
-            body.appendString("\(authorId.uuidString)\r\n")
+            body.appendString("\(authorId)\r\n")
             if let caption = caption {
                 body.appendString("--\(boundary)\r\n")
                 body.appendString("Content-Disposition: form-data; name=\"caption\"\r\n\r\n")
@@ -135,7 +135,7 @@ final class RESTAPIClient: APIClientProtocol {
         return try decoder.decode(Post.self, from: data)
     }
 
-    func likePost(_ postId: UUID) async throws -> Int {
+    func likePost(_ postId: String) async throws -> Int {
         let url = baseURL.appendingPathComponent("/posts/\(postId)/like")
         var req = URLRequest(url: url); req.httpMethod = "POST"
         if let token = authToken { req.addValue("Bearer \(token)", forHTTPHeaderField: "Authorization") }
@@ -152,7 +152,7 @@ final class RESTAPIClient: APIClientProtocol {
         throw URLError(.badServerResponse)
     }
 
-    func unlikePost(_ postId: UUID) async throws -> Int {
+    func unlikePost(_ postId: String) async throws -> Int {
         let url = baseURL.appendingPathComponent("/posts/\(postId)/like")
         var req = URLRequest(url: url); req.httpMethod = "DELETE"
         if let token = authToken { req.addValue("Bearer \(token)", forHTTPHeaderField: "Authorization") }
@@ -183,9 +183,8 @@ final class RESTAPIClient: APIClientProtocol {
             let user = try decoder.decode(User.self, from: userData)
             return (token: token, user: user)
         }
-        if let idStr = (wrapper["userId"] as? String) ?? (wrapper["user_id"] as? String) ?? (wrapper["id"] as? String) {
-            if let uuid = UUID(uuidString: idStr) { return (token: token, user: User(id: uuid, username: "", displayName: nil, avatarURL: nil)) }
-            return (token: token, user: User(id: UUID(), username: "", displayName: nil, avatarURL: nil))
+            if let idStr = (wrapper["userId"] as? String) ?? (wrapper["user_id"] as? String) ?? (wrapper["id"] as? String) {
+                return (token: token, user: User(id: idStr, username: "", displayName: nil, avatarURL: nil))
         }
         throw URLError(.badServerResponse)
     }
@@ -208,9 +207,9 @@ final class RESTAPIClient: APIClientProtocol {
         return try decoder.decode(User.self, from: data)
     }
 
-    func fetchComments(postId: UUID) async throws -> [Comment] {
+    func fetchComments(postId: String) async throws -> [Comment] {
         let url = baseURL.appendingPathComponent("/posts/")
-            .appendingPathComponent(postId.uuidString)
+            .appendingPathComponent(postId)
             .appendingPathComponent("comments")
         var req = URLRequest(url: url)
         if let token = authToken { req.addValue("Bearer \(token)", forHTTPHeaderField: "Authorization") }
@@ -219,13 +218,13 @@ final class RESTAPIClient: APIClientProtocol {
         return try decoder.decode([Comment].self, from: data)
     }
 
-    func createComment(postId: UUID, text: String) async throws -> Void {
+    func createComment(postId: String, text: String) async throws -> Void {
         let url = baseURL.appendingPathComponent("/comments")
         var req = URLRequest(url: url)
         req.httpMethod = "POST"
         if let token = authToken { req.addValue("Bearer \(token)", forHTTPHeaderField: "Authorization") }
         var comps = URLComponents()
-        comps.queryItems = [ URLQueryItem(name: "operation", value: "create"), URLQueryItem(name: "postid", value: postId.uuidString), URLQueryItem(name: "text", value: text) ]
+        comps.queryItems = [ URLQueryItem(name: "operation", value: "create"), URLQueryItem(name: "postid", value: postidValue(postId)), URLQueryItem(name: "text", value: text) ]
         req.httpBody = comps.percentEncodedQuery?.data(using: .utf8)
         req.addValue("application/x-www-form-urlencoded", forHTTPHeaderField: "Content-Type")
         debugLogRequest(req)
@@ -237,13 +236,13 @@ final class RESTAPIClient: APIClientProtocol {
         }
     }
 
-    func deleteComment(commentId: UUID) async throws -> Void {
+    func deleteComment(commentId: String) async throws -> Void {
         let url = baseURL.appendingPathComponent("/comments")
         var req = URLRequest(url: url)
         req.httpMethod = "POST"
         if let token = authToken { req.addValue("Bearer \(token)", forHTTPHeaderField: "Authorization") }
         var comps = URLComponents()
-        comps.queryItems = [ URLQueryItem(name: "operation", value: "delete"), URLQueryItem(name: "commentid", value: commentId.uuidString) ]
+        comps.queryItems = [ URLQueryItem(name: "operation", value: "delete"), URLQueryItem(name: "commentid", value: commentId) ]
         req.httpBody = comps.percentEncodedQuery?.data(using: .utf8)
         req.addValue("application/x-www-form-urlencoded", forHTTPHeaderField: "Content-Type")
         debugLogRequest(req)
@@ -255,13 +254,16 @@ final class RESTAPIClient: APIClientProtocol {
         }
     }
 
-    func deletePost(_ postId: UUID) async throws -> Void {
+    func deletePost(_ postId: String) async throws -> Void {
         let url = baseURL.appendingPathComponent("/posts/")
-            .appendingPathComponent(postId.uuidString)
+            .appendingPathComponent(postId)
         var req = URLRequest(url: url); req.httpMethod = "DELETE"
         if let token = authToken { req.addValue("Bearer \(token)", forHTTPHeaderField: "Authorization") }
         _ = try await session.data(for: req)
     }
+
+    // Helper to normalize postid value if needed
+    private func postidValue(_ id: String) -> String { return id }
 }
 
 enum AppAPI {

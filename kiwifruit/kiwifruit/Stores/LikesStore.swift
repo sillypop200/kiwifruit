@@ -3,7 +3,7 @@ import Observation
 
 @Observable
 final class LikesStore {
-    private(set) var likedIDs: Set<UUID> = []
+    private(set) var likedIDs: Set<String> = []
 
     private let key = "kiwifruit.likedIDs"
 
@@ -25,13 +25,13 @@ final class LikesStore {
     }
 
     private func save() {
-        let arr = likedIDs.map { $0.uuidString }
+        let arr = Array(likedIDs)
         UserDefaults.standard.set(arr, forKey: key)
     }
 
     private func load() {
         guard let arr = UserDefaults.standard.array(forKey: key) as? [String] else { return }
-        likedIDs = Set(arr.compactMap { UUID(uuidString: $0) })
+        likedIDs = Set(arr)
     }
 }
 

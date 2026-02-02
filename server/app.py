@@ -237,7 +237,7 @@ def post_comments(post_id):
     comments = []
     for r in rows:
         author = {'id': r['username'], 'username': r['username'], 'displayName': r['fullname'], 'avatarURL': request.host_url.rstrip('/') + '/uploads/' + (r['filename'] or 'default.jpg')}
-        comments.append({'id': r['commentid'], 'author': author, 'text': r['text'], 'createdAt': _to_iso(r['created'])})
+        comments.append({'id': str(r['commentid']), 'author': author, 'text': r['text'], 'createdAt': _to_iso(r['created'])})
     return jsonify(comments)
 
 @app.route('/comments', methods=['POST'])
