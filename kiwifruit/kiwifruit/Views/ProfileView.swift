@@ -76,11 +76,19 @@ struct ProfileView: View {
                                 .buttonStyle(.bordered)
                         }
                     } else {
-                        Button(action: { Task { await toggleFollow() } }) {
-                            Text(isFollowing ? "Unfollow" : "Follow")
+                        if isFollowing {
+                            Button(action: { Task { await toggleFollow() } }) {
+                                Text("Unfollow")
+                            }
+                            .disabled(followPending)
+                            .buttonStyle(.bordered)
+                        } else {
+                            Button(action: { Task { await toggleFollow() } }) {
+                                Text("Follow")
+                            }
+                            .disabled(followPending)
+                            .buttonStyle(.borderedProminent)
                         }
-                        .disabled(followPending)
-                        .buttonStyle(isFollowing ? .bordered : .borderedProminent)
                     }
                 }
 
