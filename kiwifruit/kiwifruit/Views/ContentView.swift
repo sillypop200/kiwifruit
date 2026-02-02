@@ -33,13 +33,20 @@ struct ContentView: View {
                 .tag(3)
         }
         .onAppear {
-            showingLogin = session.userId == nil
-            if session.userId != nil { Task { await postsStore.loadInitial() } }
+            // Show login until we have a validated session and a userId
+            showingLogin = !(session.isValidSession && session.userId != nil)
+            if session.isValidSession && session.userId != nil { Task { await postsStore.loadInitial() } }
         }
         .onChange(of: session.userId) { new in
-            showingLogin = new == nil
+            showingLogin = !(session.isValidSession && new != nil)
             if new != nil {
-                // After sign-in, show profile tab and refresh posts
+                selection = 1
+                Task { await postsStore.loadInitial() }
+            }
+        }
+        .onChange(of: session.isValidSession) { valid in
+            showingLogin = !(valid && session.userId != nil)
+            if valid && session.userId != nil {
                 selection = 1
                 Task { await postsStore.loadInitial() }
             }

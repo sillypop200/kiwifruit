@@ -11,6 +11,8 @@ final class SessionStore {
     private(set) var token: String? = nil
     private(set) var userId: UUID? = nil
     private(set) var currentUser: User? = nil
+    // Whether the saved token/session has been validated against the server
+    private(set) var isValidSession: Bool = false
 
     let apiClient: RESTAPIClient
 
@@ -23,6 +25,24 @@ final class SessionStore {
         // Ensure global API client uses this REST client by default
         AppAPI.shared = apiClient
         apiClient.setAuthToken(token)
+        // If we have a token and userId loaded, asynchronously validate that the token is still valid
+        if let token = token, let userId = userId {
+            Task {
+                do {
+                    let user = try await fetchUser(id: userId)
+                    // update stored user and mark session valid
+                    DispatchQueue.main.async {
+                        self.currentUser = user
+                        self.isValidSession = true
+                    }
+                } catch {
+                    // invalid token or user no longer exists — clear stored session
+                    DispatchQueue.main.async {
+                        self.clear()
+                    }
+                }
+            }
+        }
     }
 
     func save(token: String, user: User?) {
@@ -38,12 +58,14 @@ final class SessionStore {
         }
         apiClient.setAuthToken(token)
         AppAPI.shared = apiClient
+        isValidSession = true
     }
 
     func clear() {
         token = nil
         userId = nil
         currentUser = nil
+        isValidSession = false
         UserDefaults.standard.removeObject(forKey: tokenKey)
         UserDefaults.standard.removeObject(forKey: userKey)
         UserDefaults.standard.removeObject(forKey: userJSONKey)
@@ -63,6 +85,17 @@ final class SessionStore {
                 self.currentUser = user
             }
         }
+    }
+
+    // Fetch a user by UUID using the REST client; throws on network or decode errors
+    private func fetchUser(id: UUID) async throws -> User {
+        let url = apiClient.baseURL.appendingPathComponent("/users/")
+            .appendingPathComponent(id.uuidString)
+        var req = URLRequest(url: url)
+        if let token = token { req.addValue("Bearer \(token)", forHTTPHeaderField: "Authorization") }
+        let (data, _) = try await apiClient.session.data(for: req)
+        let decoder = JSONDecoder(); decoder.keyDecodingStrategy = .convertFromSnakeCase; decoder.dateDecodingStrategy = .iso8601
+        return try decoder.decode(User.self, from: data)
     }
 }
 
