@@ -4,7 +4,7 @@ import hashlib
 import sqlite3
 import logging
 from datetime import datetime, timezone
-from flask import Flask, request, jsonify, g, abort, send_from_directory
+from flask import Flask, request, jsonify, g, abort, send_from_directory, make_response
 from werkzeug.exceptions import HTTPException
 
 BASE_DIR = os.path.dirname(__file__)
@@ -52,6 +52,14 @@ def _to_iso(ts):
 
 @app.route('/uploads/<path:filename>')
 def uploaded_file(filename):
+    # Require authentication to fetch uploaded files (P2 behavior)
+    username = get_username_from_token(request)
+    if not username:
+        abort(403)
+    # send file or 404
+    fullpath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+    if not os.path.exists(fullpath):
+        abort(404)
     return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
 
 @app.route('/sessions', methods=['POST'])
@@ -63,7 +71,7 @@ def create_session():
         abort(400)
     db = get_db()
     # verify username/password
-    row = db.execute('SELECT userid, username, fullname, filename, password FROM users WHERE username = ?', (username,)).fetchone()
+    row = db.execute('SELECT username, fullname, filename, password FROM users WHERE username = ?', (username,)).fetchone()
     if not row:
         abort(403)
     stored = row['password'] or ''
@@ -85,15 +93,18 @@ def create_session():
     token = uuid.uuid4().hex
     db.execute('INSERT INTO sessions (token, username) VALUES (?, ?)', (token, username))
     db.commit()
-    userid = row['userid']
+    # Return user where id is the username (username is primary key)
     user = {
-        'id': userid,
+        'id': row['username'],
         'username': row['username'],
         'displayName': row['fullname'],
         'avatarURL': request.host_url.rstrip('/') + '/uploads/' + (row['filename'] or 'default.jpg')
     }
-    logger.info("session created: username=%s token=%s userId=%s", username, token, userid)
-    return jsonify({'token': token, 'user': user})
+    logger.info("session created: username=%s token=%s", username, token)
+    resp = make_response(jsonify({'token': token, 'user': user}))
+    # also set a session cookie for browser-based pages
+    resp.set_cookie('session', token, httponly=True)
+    return resp
 
 @app.route('/posts', methods=['GET', 'POST'])
 def posts_handler():
@@ -103,12 +114,12 @@ def posts_handler():
         pageSize = int(request.args.get('pageSize', 10))
         offset = page * pageSize
         # select post filename as postfile and user filename as userfile to avoid ambiguity
-        rows = db.execute('SELECT p.postid, p.filename as postfile, p.owner, p.caption, p.created, u.userid, u.username, u.fullname, u.filename as userfile FROM posts p JOIN users u ON u.username = p.owner ORDER BY p.created DESC LIMIT ? OFFSET ?', (pageSize, offset)).fetchall()
+        rows = db.execute('SELECT p.postid, p.filename as postfile, p.owner, p.caption, p.created, u.username, u.fullname, u.filename as userfile FROM posts p JOIN users u ON u.username = p.owner ORDER BY p.created DESC LIMIT ? OFFSET ?', (pageSize, offset)).fetchall()
 
         posts = []
         for r in rows:
             postid = r['postid']
-            owner = {'id': r['userid'], 'username': r['username'], 'displayName': r['fullname'], 'avatarURL': request.host_url.rstrip('/') + '/uploads/' + (r['userfile'] or 'default.jpg')}
+            owner = {'id': r['username'], 'username': r['username'], 'displayName': r['fullname'], 'avatarURL': request.host_url.rstrip('/') + '/uploads/' + (r['userfile'] or 'default.jpg')}
             imageURL = request.host_url.rstrip('/') + '/uploads/' + r['postfile']
             likes = db.execute('SELECT COUNT(*) as c FROM likes WHERE postid = ?', (postid,)).fetchone()['c']
             posts.append({'id': str(postid), 'author': owner, 'imageURL': imageURL, 'caption': r['caption'], 'likes': likes})
@@ -130,17 +141,17 @@ def posts_handler():
     filepath = os.path.join(app.config['UPLOAD_FOLDER'], uuid_basename)
     file.save(filepath)
     caption = request.form.get('caption')
-    # create post id as standard UUID string
-    postid = str(uuid.uuid4())
-    db.execute('INSERT INTO posts (postid, owner, filename, caption) VALUES (?, ?, ?, ?)', (postid, username, uuid_basename, caption))
+    # Insert post (AUTOINCREMENT postid)
+    cur = db.execute('INSERT INTO posts (filename, owner, caption) VALUES (?, ?, ?)', (uuid_basename, username, caption))
     db.commit()
+    postid = cur.lastrowid
     # Return the created post in the same shape as GET /posts so clients can decode it.
-    row = db.execute('SELECT p.postid, p.filename, p.owner, p.caption, p.created, u.userid, u.username, u.fullname, u.filename as userfile FROM posts p JOIN users u ON u.username = p.owner WHERE p.postid = ?', (postid,)).fetchone()
+    row = db.execute('SELECT p.postid, p.filename, p.owner, p.caption, p.created, u.username, u.fullname, u.filename as userfile FROM posts p JOIN users u ON u.username = p.owner WHERE p.postid = ?', (postid,)).fetchone()
     if not row:
         return jsonify({'status': 'ok', 'postId': postid})
     # Build author dict
     owner = {
-        'id': row['userid'],
+        'id': row['username'],
         'username': row['username'],
         'displayName': row['fullname'],
         'avatarURL': request.host_url.rstrip('/') + '/uploads/' + (row['userfile'] or 'default.jpg')
@@ -170,7 +181,7 @@ def post_like(post_id):
             # already liked; return current count
             likes = db.execute('SELECT COUNT(*) as c FROM likes WHERE postid = ?', (post_id,)).fetchone()['c']
             return jsonify({'likes': likes})
-        db.execute('INSERT INTO likes (likeid, owner, postid) VALUES (?, ?, ?)', (str(uuid.uuid4()), username, post_id))
+        db.execute('INSERT INTO likes (owner, postid) VALUES (?, ?)', (username, post_id))
         db.commit()
         likes = db.execute('SELECT COUNT(*) as c FROM likes WHERE postid = ?', (post_id,)).fetchone()['c']
         return jsonify({'likes': likes})
@@ -186,12 +197,12 @@ def post_like(post_id):
 def post_detail(post_id):
     db = get_db()
     if request.method == 'GET':
-        row = db.execute('SELECT p.postid, p.filename, p.owner, p.caption, p.created, u.userid, u.username, u.fullname FROM posts p JOIN users u ON u.username = p.owner WHERE p.postid = ?', (post_id,)).fetchone()
+        row = db.execute('SELECT p.postid, p.filename, p.owner, p.caption, p.created, u.username, u.fullname FROM posts p JOIN users u ON u.username = p.owner WHERE p.postid = ?', (post_id,)).fetchone()
         if not row:
             abort(404)
         # ensure we select user file separately and convert created timestamp to ISO8601
-        row = db.execute('SELECT p.postid, p.filename as postfile, p.owner, p.caption, p.created, u.userid, u.username, u.fullname, u.filename as userfile FROM posts p JOIN users u ON u.username = p.owner WHERE p.postid = ?', (post_id,)).fetchone()
-        owner = {'id': row['userid'], 'username': row['username'], 'displayName': row['fullname'], 'avatarURL': request.host_url.rstrip('/') + '/uploads/' + (row['userfile'] or 'default.jpg')}
+        row = db.execute('SELECT p.postid, p.filename as postfile, p.owner, p.caption, p.created, u.username, u.fullname, u.filename as userfile FROM posts p JOIN users u ON u.username = p.owner WHERE p.postid = ?', (post_id,)).fetchone()
+        owner = {'id': row['username'], 'username': row['username'], 'displayName': row['fullname'], 'avatarURL': request.host_url.rstrip('/') + '/uploads/' + (row['userfile'] or 'default.jpg')}
         imageURL = request.host_url.rstrip('/') + '/uploads/' + row['postfile']
         likes = db.execute('SELECT COUNT(*) as c FROM likes WHERE postid = ?', (post_id,)).fetchone()['c']
         post = {'id': str(row['postid']), 'author': owner, 'imageURL': imageURL, 'caption': row['caption'], 'likes': likes}
@@ -208,8 +219,6 @@ def post_detail(post_id):
         abort(403)
     # delete post record and associated file
     db.execute('DELETE FROM posts WHERE postid = ?', (post_id,))
-    db.execute('DELETE FROM likes WHERE postid = ?', (post_id,))
-    db.execute('DELETE FROM comments WHERE postid = ?', (post_id,))
     db.commit()
     try:
         filepath = os.path.join(app.config['UPLOAD_FOLDER'], row['filename'])
@@ -224,10 +233,10 @@ def post_detail(post_id):
 @app.route('/posts/<post_id>/comments', methods=['GET'])
 def post_comments(post_id):
     db = get_db()
-    rows = db.execute('SELECT c.commentid, c.owner, c.text, c.created, u.userid, u.username, u.fullname, u.filename FROM comments c JOIN users u ON u.username = c.owner WHERE c.postid = ? ORDER BY c.created ASC', (post_id,)).fetchall()
+    rows = db.execute('SELECT c.commentid, c.owner, c.text, c.created, u.username, u.fullname, u.filename FROM comments c JOIN users u ON u.username = c.owner WHERE c.postid = ? ORDER BY c.created ASC', (post_id,)).fetchall()
     comments = []
     for r in rows:
-        author = {'id': r['userid'], 'username': r['username'], 'displayName': r['fullname'], 'avatarURL': request.host_url.rstrip('/') + '/uploads/' + (r['filename'] or 'default.jpg')}
+        author = {'id': r['username'], 'username': r['username'], 'displayName': r['fullname'], 'avatarURL': request.host_url.rstrip('/') + '/uploads/' + (r['filename'] or 'default.jpg')}
         comments.append({'id': r['commentid'], 'author': author, 'text': r['text'], 'createdAt': _to_iso(r['created'])})
     return jsonify(comments)
 
@@ -243,8 +252,8 @@ def comments_handler():
         if not text or not postid:
             abort(400)
         db = get_db()
-        # create comment id as UUID string
-        db.execute('INSERT INTO comments (commentid, owner, postid, text) VALUES (?, ?, ?, ?)', (str(uuid.uuid4()), username, postid, text))
+        # create comment with AUTOINCREMENT id
+        db.execute('INSERT INTO comments (owner, postid, text) VALUES (?, ?, ?)', (username, postid, text))
         db.commit()
         return jsonify({'status': 'ok'})
     if operation == 'delete':
@@ -261,14 +270,14 @@ def comments_handler():
     abort(400)
 
 
-@app.route('/users/<user_id>', methods=['GET'])
-def get_user(user_id):
+@app.route('/users/<username>', methods=['GET'])
+def get_user(username):
     db = get_db()
-    row = db.execute('SELECT userid, username, fullname, filename FROM users WHERE userid = ?', (user_id,)).fetchone()
+    row = db.execute('SELECT username, fullname, filename FROM users WHERE username = ?', (username,)).fetchone()
     if not row:
         abort(404)
     user = {
-        'id': row['userid'],
+        'id': row['username'],
         'username': row['username'],
         'displayName': row['fullname'],
         'avatarURL': request.host_url.rstrip('/') + '/uploads/' + (row['filename'] or 'default.jpg')
@@ -289,29 +298,28 @@ def create_user():
     # check uniqueness
     if db.execute('SELECT 1 FROM users WHERE username = ?', (username,)).fetchone():
         return jsonify({'error': 'username_conflict'}), 409
-    userid = str(uuid.uuid4())
     # generate per-user salt and store as sha512$<salt>$<hash>
     salt = uuid.uuid4().hex
     pw_hash_raw = hashlib.sha512((salt + password).encode('utf-8')).hexdigest()
     pw_hash = f"sha512${salt}${pw_hash_raw}"
     filename = 'default.jpg'
-    db.execute('INSERT INTO users (userid, username, fullname, email, filename, password) VALUES (?, ?, ?, ?, ?, ?)', (userid, username, fullname, email, filename, pw_hash))
+    db.execute('INSERT INTO users (username, fullname, email, filename, password) VALUES (?, ?, ?, ?, ?)', (username, fullname, email, filename, pw_hash))
     db.commit()
-    user = {'id': userid, 'username': username, 'displayName': fullname, 'avatarURL': request.host_url.rstrip('/') + '/uploads/' + filename}
-    logger.info('user created: username=%s userId=%s', username, userid)
+    user = {'id': username, 'username': username, 'displayName': fullname, 'avatarURL': request.host_url.rstrip('/') + '/uploads/' + filename}
+    logger.info('user created: username=%s', username)
     return jsonify(user), 201
 
 
-@app.route('/users/<user_id>', methods=['PUT'])
-def update_user(user_id):
-    username = get_username_from_token(request)
-    if not username:
+@app.route('/users/<username>', methods=['PUT'])
+def update_user(username):
+    current = get_username_from_token(request)
+    if not current:
         abort(403)
     db = get_db()
-    row = db.execute('SELECT userid, username FROM users WHERE userid = ?', (user_id,)).fetchone()
+    row = db.execute('SELECT username FROM users WHERE username = ?', (username,)).fetchone()
     if not row:
         abort(404)
-    if row['username'] != username:
+    if row['username'] != current:
         abort(403)
     data = request.get_json() or {}
     fullname = data.get('fullname')
@@ -329,14 +337,14 @@ def update_user(user_id):
         sql = 'UPDATE users SET ' + ', '.join(updates) + ' WHERE username = ?'
         db.execute(sql, params)
         db.commit()
-    newrow = db.execute('SELECT userid, username, fullname, filename FROM users WHERE userid = ?', (user_id,)).fetchone()
-    user = {'id': newrow['userid'], 'username': newrow['username'], 'displayName': newrow['fullname'], 'avatarURL': request.host_url.rstrip('/') + '/uploads/' + (newrow['filename'] or 'default.jpg')}
+    newrow = db.execute('SELECT username, fullname, filename FROM users WHERE username = ?', (username,)).fetchone()
+    user = {'id': newrow['username'], 'username': newrow['username'], 'displayName': newrow['fullname'], 'avatarURL': request.host_url.rstrip('/') + '/uploads/' + (newrow['filename'] or 'default.jpg')}
     return jsonify(user)
 
 
 @app.errorhandler(HTTPException)
 def handle_http_exception(e: HTTPException):
-    response = {'error': e.description, 'code': e.code}
+    response = {'message': e.description, 'status_code': e.code}
     return jsonify(response), e.code
 
 
@@ -346,10 +354,15 @@ def handle_exception(e):
     return jsonify({'error': 'internal_server_error', 'message': str(e)}), 500
 
 def get_username_from_token(req):
+    # Support either Authorization: Bearer <token> or cookie 'session'
     auth = req.headers.get('Authorization')
-    if not auth or not auth.startswith('Bearer '):
+    token = None
+    if auth and auth.startswith('Bearer '):
+        token = auth.split(' ', 1)[1]
+    else:
+        token = req.cookies.get('session')
+    if not token:
         return None
-    token = auth.split(' ', 1)[1]
     db = get_db()
     row = db.execute('SELECT username FROM sessions WHERE token = ?', (token,)).fetchone()
     return row['username'] if row else None

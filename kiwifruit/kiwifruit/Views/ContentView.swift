@@ -36,12 +36,12 @@ struct ContentView: View {
             if session.isValidSession && session.userId != nil { Task { await postsStore.loadInitial() } }
         }
         .onChange(of: session.userId) { new in
-            if new != nil { selection = 1; Task { await postsStore.loadInitial() } }
+            if new != nil { selection = 1; Task { await postsStore.loadInitial(force: true) } }
         }
         .onChange(of: session.isValidSession) { valid in
-            if valid && session.userId != nil { selection = 1; Task { await postsStore.loadInitial() } }
+            if valid && session.userId != nil { selection = 1; Task { await postsStore.loadInitial(force: true) } }
         }
-        .fullScreenCover(isPresented: Binding(get: { session.forceFreshLogin || !(session.isValidSession && session.userId != nil) }, set: { _ in })) {
+        .fullScreenCover(isPresented: Binding(get: { !(session.isValidSession && session.userId != nil) }, set: { _ in })) {
             LoginView()
         }
     }

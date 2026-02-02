@@ -8,6 +8,8 @@ struct SignUpView: View {
     @State private var password: String = ""
     @State private var fullname: String = ""
     @State private var isLoading = false
+    @State private var showErrorAlert = false
+    @State private var errorMessage = ""
 
     var body: some View {
         NavigationStack {
@@ -35,6 +37,12 @@ struct SignUpView: View {
                 }
             }
         }
+
+        .alert("Create Account Failed", isPresented: $showErrorAlert) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text(errorMessage)
+        }
     }
 
     private func createAccount() async {
@@ -47,6 +55,8 @@ struct SignUpView: View {
             dismiss()
         } catch {
             print("Create account failed: \(error)")
+            errorMessage = String(describing: error)
+            showErrorAlert = true
         }
     }
 }

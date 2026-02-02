@@ -7,6 +7,8 @@ struct CommentsView: View {
     @Environment(\.dismiss) private var dismiss
 
     @State private var newCommentText: String = ""
+    @State private var showErrorAlert: Bool = false
+    @State private var errorMessage: String? = nil
 
     var body: some View {
         NavigationStack {
@@ -38,6 +40,7 @@ struct CommentsView: View {
             .navigationTitle("Comments")
             .toolbar { ToolbarItem(placement: .cancellationAction) { Button("Close") { dismiss() } } }
             .task { await commentsStore.fetchForPost(post) }
+            .alert("Comment Error", isPresented: $showErrorAlert, actions: { Button("OK", role: .cancel) {} }, message: { Text(errorMessage ?? "Failed to post comment") })
         }
     }
 
@@ -45,7 +48,11 @@ struct CommentsView: View {
         guard let uid = session.userId else { return }
         // Use the signed-in user if available; otherwise fall back to a minimal placeholder
         let author: User? = session.currentUser ?? (session.userId != nil ? User(id: session.userId!, username: "", displayName: nil, avatarURL: nil) : nil)
-        await commentsStore.createComment(newCommentText, post: post, author: author)
+        let success = await commentsStore.createComment(newCommentText, post: post, author: author)
+        if !success {
+            errorMessage = "Couldn't post comment to server — saved locally."
+            showErrorAlert = true
+        }
         newCommentText = ""
     }
 }

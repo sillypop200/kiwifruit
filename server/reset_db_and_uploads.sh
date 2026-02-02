@@ -37,21 +37,24 @@ echo "placeholder image" > "$UPLOADS/prod_placeholder_2.jpg"
 
 # Seed a sample user and a couple posts referencing the placeholder images
 python3 - <<PY
-import sqlite3, uuid
-from datetime import datetime
+import sqlite3
 conn = sqlite3.connect('$DB')
 cur = conn.cursor()
-# Insert a sample user
-user_id = str(uuid.uuid4())
-cur.execute("INSERT INTO users (userid, username, fullname, email, filename, password) VALUES (?, ?, ?, ?, ?, ?)", (user_id, 'prod_user', 'Prod User', 'prod@example.com', 'default.jpg', ''))
-# Insert a couple posts
-post1 = str(uuid.uuid4())
-post2 = str(uuid.uuid4())
-cur.execute("INSERT INTO posts (postid, owner, filename, caption, created) VALUES (?, ?, ?, ?, datetime('now'))", (post1, 'prod_user', 'prod_placeholder_1.jpg', 'Welcome to KiwiFruit!'))
-cur.execute("INSERT INTO posts (postid, owner, filename, caption, created) VALUES (?, ?, ?, ?, datetime('now'))", (post2, 'prod_user', 'prod_placeholder_2.jpg', 'Second production photo'))
+
+# Insert sample users
+cur.execute("INSERT INTO users (username, fullname, email, filename, password) VALUES (?, ?, ?, ?, ?)", ('prod_user', 'Prod User', 'prod@example.com', 'default.jpg', ''))
+cur.execute("INSERT INTO users (username, fullname, email, filename, password) VALUES (?, ?, ?, ?, ?)", ('alice', 'Alice Example', 'alice@example.com', 'default.jpg', ''))
+
+# Insert a couple posts for prod_user
+cur.execute("INSERT INTO posts (filename, owner, caption, created) VALUES (?, ?, ?, datetime('now'))", ('prod_placeholder_1.jpg', 'prod_user', 'Welcome to KiwiFruit!'))
+cur.execute("INSERT INTO posts (filename, owner, caption, created) VALUES (?, ?, ?, datetime('now'))", ('prod_placeholder_2.jpg', 'prod_user', 'Second production photo'))
+
 conn.commit()
-print('Seeded user', user_id)
-print('Seeded posts', post1, post2)
+print('Seeded users: prod_user, alice')
+cur.execute('SELECT postid, filename, owner FROM posts')
+rows = cur.fetchall()
+for r in rows:
+  print('Seeded post', r[0], r[1], 'owner=', r[2])
 conn.close()
 PY
 

@@ -11,8 +11,9 @@ final class PostsStore {
     private let pageSize = 10
 
     /// Load initial page (idempotent)
-    func loadInitial() async {
-        guard posts.isEmpty else { return }
+    func loadInitial(force: Bool = false) async {
+        if !posts.isEmpty && !force { return }
+        posts.removeAll()
         page = 0
         await fetchNext()
     }
@@ -24,7 +25,12 @@ final class PostsStore {
         defer { isLoading = false }
         do {
             let new = try await AppAPI.shared.fetchPosts(page: page, pageSize: pageSize)
-            posts.append(contentsOf: new)
+            // append while avoiding duplicates
+            for p in new {
+                if !posts.contains(where: { $0.id == p.id }) {
+                    posts.append(p)
+                }
+            }
             page += 1
         } catch {
             print("PostsStore: fetchNext failed: \(error)")
@@ -33,6 +39,8 @@ final class PostsStore {
 
     /// Prepend a newly created post (used after creating a post locally)
     func prepend(_ post: Post) {
+        // remove existing copy if present, then insert at front
+        posts.removeAll(where: { $0.id == post.id })
         posts.insert(post, at: 0)
     }
 

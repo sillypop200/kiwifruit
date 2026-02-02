@@ -31,17 +31,20 @@ final class CommentsStore {
         }
     }
 
-    func createComment(_ text: String, post: Post, author: User?) async {
+    /// Create a comment on the server; returns true if server call succeeded, false if fallback used.
+    func createComment(_ text: String, post: Post, author: User?) async -> Bool {
         do {
             try await AppAPI.shared.createComment(postId: post.id, text: text)
             // refresh comments from server
             await fetchForPost(post)
+            return true
         } catch {
             print("createComment failed: \(error)")
             // fallback to local add
             if let author = author {
                 addLocalComment(text, post: post, author: author)
             }
+            return false
         }
     }
 

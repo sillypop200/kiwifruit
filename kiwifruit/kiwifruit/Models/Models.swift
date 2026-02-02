@@ -22,7 +22,8 @@ struct Post: Identifiable, Codable, Hashable {
 
 struct Comment: Identifiable, Codable, Hashable {
     let id: UUID
-    let postId: UUID
+    // Server responses may omit postId; make optional to be tolerant
+    let postId: UUID?
     let author: User
     let text: String
     let createdAt: Date

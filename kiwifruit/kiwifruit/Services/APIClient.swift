@@ -140,7 +140,12 @@ final class RESTAPIClient: APIClientProtocol {
         var req = URLRequest(url: url); req.httpMethod = "POST"
         if let token = authToken { req.addValue("Bearer \(token)", forHTTPHeaderField: "Authorization") }
         debugLogRequest(req)
-        let (data, _) = try await session.data(for: req)
+        let (data, resp) = try await session.data(for: req)
+        if let http = resp as? HTTPURLResponse, !(200...299).contains(http.statusCode) {
+            let body = String(data: data, encoding: .utf8) ?? "<non-utf8>"
+            print("likePost failed HTTP \(http.statusCode): \(body)")
+            throw URLError(.badServerResponse)
+        }
         let decoded = try JSONSerialization.jsonObject(with: data) as? [String: Any]
         if let likes = decoded?["like_count"] as? Int { return likes }
         if let likes = decoded?["likes"] as? Int { return likes }
@@ -152,7 +157,12 @@ final class RESTAPIClient: APIClientProtocol {
         var req = URLRequest(url: url); req.httpMethod = "DELETE"
         if let token = authToken { req.addValue("Bearer \(token)", forHTTPHeaderField: "Authorization") }
         debugLogRequest(req)
-        let (data, _) = try await session.data(for: req)
+        let (data, resp) = try await session.data(for: req)
+        if let http = resp as? HTTPURLResponse, !(200...299).contains(http.statusCode) {
+            let body = String(data: data, encoding: .utf8) ?? "<non-utf8>"
+            print("unlikePost failed HTTP \(http.statusCode): \(body)")
+            throw URLError(.badServerResponse)
+        }
         let decoded = try JSONSerialization.jsonObject(with: data) as? [String: Any]
         if let likes = decoded?["like_count"] as? Int { return likes }
         if let likes = decoded?["likes"] as? Int { return likes }
@@ -218,7 +228,13 @@ final class RESTAPIClient: APIClientProtocol {
         comps.queryItems = [ URLQueryItem(name: "operation", value: "create"), URLQueryItem(name: "postid", value: postId.uuidString), URLQueryItem(name: "text", value: text) ]
         req.httpBody = comps.percentEncodedQuery?.data(using: .utf8)
         req.addValue("application/x-www-form-urlencoded", forHTTPHeaderField: "Content-Type")
-        _ = try await session.data(for: req)
+        debugLogRequest(req)
+        let (data, resp) = try await session.data(for: req)
+        if let http = resp as? HTTPURLResponse, !(200...299).contains(http.statusCode) {
+            let body = String(data: data, encoding: .utf8) ?? "<non-utf8>"
+            print("createComment failed HTTP \(http.statusCode): \(body)")
+            throw URLError(.badServerResponse)
+        }
     }
 
     func deleteComment(commentId: UUID) async throws -> Void {
@@ -230,7 +246,13 @@ final class RESTAPIClient: APIClientProtocol {
         comps.queryItems = [ URLQueryItem(name: "operation", value: "delete"), URLQueryItem(name: "commentid", value: commentId.uuidString) ]
         req.httpBody = comps.percentEncodedQuery?.data(using: .utf8)
         req.addValue("application/x-www-form-urlencoded", forHTTPHeaderField: "Content-Type")
-        _ = try await session.data(for: req)
+        debugLogRequest(req)
+        let (data, resp) = try await session.data(for: req)
+        if let http = resp as? HTTPURLResponse, !(200...299).contains(http.statusCode) {
+            let body = String(data: data, encoding: .utf8) ?? "<non-utf8>"
+            print("deleteComment failed HTTP \(http.statusCode): \(body)")
+            throw URLError(.badServerResponse)
+        }
     }
 
     func deletePost(_ postId: UUID) async throws -> Void {
@@ -244,6 +266,6 @@ final class RESTAPIClient: APIClientProtocol {
 
 enum AppAPI {
     /// Default shared client. Swap to `RESTAPIClient(baseURL:)` when you have a backend.
-    static var shared: APIClientProtocol = MockAPIClient()
+    static var shared: APIClientProtocol = RESTAPIClient(baseURL: URL(string: "http://127.0.0.1:5001")!)
 }
 

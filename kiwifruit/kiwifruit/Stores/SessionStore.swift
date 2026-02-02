@@ -7,15 +7,14 @@ final class SessionStore {
     private let tokenKey = "kiwifruit.session.token"
     private let userKey = "kiwifruit.session.userId"
     private let userJSONKey = "kiwifruit.session.user"
-    private let forceFreshLoginKey = "kiwifruit.session.forceFreshLogin"
+    
 
     private(set) var token: String? = nil
     private(set) var userId: UUID? = nil
     private(set) var currentUser: User? = nil
     // Whether the saved token/session has been validated against the server
     private(set) var isValidSession: Bool = false
-    // When true, require the user to manually sign in even if a token exists.
-    var forceFreshLogin: Bool = true
+    // (no forced-login flag)
 
     let apiClient: RESTAPIClient
 
@@ -62,8 +61,7 @@ final class SessionStore {
         apiClient.setAuthToken(token)
         AppAPI.shared = apiClient
         isValidSession = true
-        // Once a user signs in interactively, don't force a fresh login anymore
-        setForceFreshLogin(false)
+        print("SessionStore.save: saved token=\(token.prefix(8)).. userId=\(user?.id.uuidString ?? "<nil>") username=\(user?.username ?? "<nil>")")
     }
 
     func clear() {
@@ -76,6 +74,7 @@ final class SessionStore {
         UserDefaults.standard.removeObject(forKey: userJSONKey)
         apiClient.setAuthToken(nil)
         AppAPI.shared = MockAPIClient()
+        print("SessionStore.clear: cleared session")
     }
 
     private func load() {
@@ -90,12 +89,7 @@ final class SessionStore {
                 self.currentUser = user
             }
         }
-        if UserDefaults.standard.object(forKey: forceFreshLoginKey) == nil {
-            // default to true for stricter behavior on first run
-            self.forceFreshLogin = true
-        } else {
-            self.forceFreshLogin = UserDefaults.standard.bool(forKey: forceFreshLoginKey)
-        }
+        print("SessionStore.load: token=\(token != nil ? "present" : "nil") userId=\(userId?.uuidString ?? "nil") currentUser=\(currentUser?.username ?? "nil")")
     }
 
     // Fetch a user by UUID using the REST client; throws on network or decode errors
@@ -109,11 +103,7 @@ final class SessionStore {
         return try decoder.decode(User.self, from: data)
     }
 
-    /// Force or unforce a fresh login prompt; persisted across launches.
-    func setForceFreshLogin(_ force: Bool) {
-        forceFreshLogin = force
-        UserDefaults.standard.set(force, forKey: forceFreshLoginKey)
-    }
+    // removed force-fresh-login API
 }
 
 // Environment key for SessionStore

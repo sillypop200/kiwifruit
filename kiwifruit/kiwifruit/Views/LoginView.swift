@@ -7,6 +7,8 @@ struct LoginView: View {
     @State private var password: String = ""
     @State private var isLoading = false
     @State private var showingSignUp = false
+    @State private var showErrorAlert = false
+    @State private var errorMessage = ""
 
     var body: some View {
         NavigationStack {
@@ -36,6 +38,11 @@ struct LoginView: View {
                 }
             }
             .sheet(isPresented: $showingSignUp) { SignUpView() }
+            .alert("Sign In Failed", isPresented: $showErrorAlert) {
+                Button("OK", role: .cancel) {}
+            } message: {
+                Text(errorMessage)
+            }
         }
     }
 
@@ -45,9 +52,12 @@ struct LoginView: View {
         do {
             let (token, user) = try await AppAPI.shared.createSession(username: username, password: password)
             session.save(token: token, user: user)
+            print("LoginView.signIn: signed in user=\(user.username) token=\(token.prefix(8))..")
             dismiss()
         } catch {
             print("Sign in failed: \(error)")
+            errorMessage = String(describing: error)
+            showErrorAlert = true
         }
     }
 }
