@@ -45,6 +45,11 @@ final class PostsStore {
         }
     }
 
+    /// Remove a post locally (after server deletion)
+    func removePost(postId: UUID) {
+        posts.removeAll(where: { $0.id == postId })
+    }
+
     /// Return posts authored by a specific user
     func posts(for user: User) -> [Post] {
         posts.filter { $0.author.id == user.id }

@@ -30,19 +30,20 @@ struct CommentsView: View {
                 HStack {
                     TextField("Add a comment...", text: $newCommentText)
                         .textFieldStyle(RoundedBorderTextFieldStyle())
-                    Button("Send") { addComment() }
+                    Button("Send") { Task { await addComment() } }
                         .disabled(newCommentText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || session.userId == nil)
                 }
                 .padding()
             }
             .navigationTitle("Comments")
             .toolbar { ToolbarItem(placement: .cancellationAction) { Button("Close") { dismiss() } } }
+            .task { await commentsStore.fetchForPost(post) }
         }
     }
 
-    private func addComment() {
+    private func addComment() async {
         guard let uid = session.userId else { return }
-        commentsStore.addComment(newCommentText, post: post, author: MockData.sampleUser)
+        await commentsStore.createComment(newCommentText, post: post, author: MockData.sampleUser)
         newCommentText = ""
     }
 }

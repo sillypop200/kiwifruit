@@ -1,5 +1,6 @@
 import os
 import uuid
+import hashlib
 import sqlite3
 import logging
 from datetime import datetime, timezone
@@ -57,27 +58,39 @@ def uploaded_file(filename):
 def create_session():
     data = request.get_json() or {}
     username = data.get('username')
-    if not username:
+    password = data.get('password')
+    if not username or not password:
         abort(400)
-    token = uuid.uuid4().hex
     db = get_db()
-    # create user if not exists with placeholder fields
-    cur = db.execute('SELECT username FROM users WHERE username = ?', (username,))
-    if not cur.fetchone():
-        # Use standard UUID string format for user IDs so clients can parse as UUID
-        db.execute('INSERT INTO users (userid, username, fullname, email, filename, password) VALUES (?, ?, ?, ?, ?, ?)',
-                   (str(uuid.uuid4()), username, username, f'{username}@example.com', 'default.jpg', ''))
-        db.commit()
+    # verify username/password
+    row = db.execute('SELECT userid, username, fullname, filename, password FROM users WHERE username = ?', (username,)).fetchone()
+    if not row:
+        abort(403)
+    stored = row['password'] or ''
+    # Support salted format: sha512$<salt>$<hash>
+    if stored.startswith('sha512$'):
+        try:
+            _prefix, salt, stored_hash = stored.split('$', 2)
+            provided_hash = hashlib.sha512((salt + password).encode('utf-8')).hexdigest()
+            if provided_hash != stored_hash:
+                abort(403)
+        except Exception:
+            abort(403)
+    else:
+        # legacy unsalted hash
+        provided_hash = hashlib.sha512(password.encode('utf-8')).hexdigest()
+        if provided_hash != stored:
+            abort(403)
+
+    token = uuid.uuid4().hex
     db.execute('INSERT INTO sessions (token, username) VALUES (?, ?)', (token, username))
     db.commit()
-    # Return token and user object as generated from users table
-    cur = db.execute('SELECT userid, username, fullname, filename FROM users WHERE username = ?', (username,)).fetchone()
-    userid = cur['userid']
+    userid = row['userid']
     user = {
         'id': userid,
-        'username': cur['username'],
-        'displayName': cur['fullname'],
-        'avatarURL': request.host_url.rstrip('/') + '/uploads/' + (cur['filename'] or 'default.jpg')
+        'username': row['username'],
+        'displayName': row['fullname'],
+        'avatarURL': request.host_url.rstrip('/') + '/uploads/' + (row['filename'] or 'default.jpg')
     }
     logger.info("session created: username=%s token=%s userId=%s", username, token, userid)
     return jsonify({'token': token, 'user': user})
@@ -150,18 +163,21 @@ def post_like(post_id):
     if not username:
         abort(403)
     db = get_db()
-    like_exists = db.execute('SELECT 1 FROM likes WHERE owner = ? AND postid = ?', (username, post_id)).fetchone()
     if request.method == 'POST':
-        row = db.execute('SELECT p.postid, p.filename as postfile, p.owner, p.caption, p.created, u.userid, u.username, u.fullname, u.filename as userfile FROM posts p JOIN users u ON u.username = p.owner WHERE p.postid = ?', (post_id,)).fetchone()
-        if not row:
-            abort(404)
-        owner = {'id': row['userid'], 'username': row['username'], 'displayName': row['fullname'], 'avatarURL': request.host_url.rstrip('/') + '/uploads/' + (row['userfile'] or 'default.jpg')}
-        imageURL = request.host_url.rstrip('/') + '/uploads/' + row['postfile']
-        likes = db.execute('SELECT COUNT(*) as c FROM likes WHERE postid = ?', (post_id,)).fetchone()['c']
-        post = {'id': str(row['postid']), 'author': owner, 'imageURL': imageURL, 'caption': row['caption'], 'likes': likes}
-        return jsonify(post)
-        db.execute('DELETE FROM likes WHERE owner = ? AND postid = ?', (username, post_id))
+        # insert like if not exists
+        exists = db.execute('SELECT 1 FROM likes WHERE owner = ? AND postid = ?', (username, post_id)).fetchone()
+        if exists:
+            # already liked; return current count
+            likes = db.execute('SELECT COUNT(*) as c FROM likes WHERE postid = ?', (post_id,)).fetchone()['c']
+            return jsonify({'likes': likes})
+        db.execute('INSERT INTO likes (likeid, owner, postid) VALUES (?, ?, ?)', (str(uuid.uuid4()), username, post_id))
         db.commit()
+        likes = db.execute('SELECT COUNT(*) as c FROM likes WHERE postid = ?', (post_id,)).fetchone()['c']
+        return jsonify({'likes': likes})
+
+    # DELETE - remove like
+    db.execute('DELETE FROM likes WHERE owner = ? AND postid = ?', (username, post_id))
+    db.commit()
     likes = db.execute('SELECT COUNT(*) as c FROM likes WHERE postid = ?', (post_id,)).fetchone()['c']
     return jsonify({'likes': likes})
 
@@ -203,6 +219,17 @@ def post_detail(post_id):
         logger.warning('failed to remove file %s: %s', row['filename'], e)
     logger.info('post deleted: postId=%s owner=%s', post_id, username)
     return jsonify({'status': 'ok'})
+
+
+@app.route('/posts/<post_id>/comments', methods=['GET'])
+def post_comments(post_id):
+    db = get_db()
+    rows = db.execute('SELECT c.commentid, c.owner, c.text, c.created, u.userid, u.username, u.fullname, u.filename FROM comments c JOIN users u ON u.username = c.owner WHERE c.postid = ? ORDER BY c.created ASC', (post_id,)).fetchall()
+    comments = []
+    for r in rows:
+        author = {'id': r['userid'], 'username': r['username'], 'displayName': r['fullname'], 'avatarURL': request.host_url.rstrip('/') + '/uploads/' + (r['filename'] or 'default.jpg')}
+        comments.append({'id': r['commentid'], 'author': author, 'text': r['text'], 'createdAt': _to_iso(r['created'])})
+    return jsonify(comments)
 
 @app.route('/comments', methods=['POST'])
 def comments_handler():
@@ -246,6 +273,64 @@ def get_user(user_id):
         'displayName': row['fullname'],
         'avatarURL': request.host_url.rstrip('/') + '/uploads/' + (row['filename'] or 'default.jpg')
     }
+    return jsonify(user)
+
+
+@app.route('/users', methods=['POST'])
+def create_user():
+    data = request.get_json() or {}
+    username = data.get('username')
+    password = data.get('password')
+    fullname = data.get('fullname') or username
+    email = data.get('email') or f"{username}@example.com"
+    if not username or not password:
+        abort(400)
+    db = get_db()
+    # check uniqueness
+    if db.execute('SELECT 1 FROM users WHERE username = ?', (username,)).fetchone():
+        return jsonify({'error': 'username_conflict'}), 409
+    userid = str(uuid.uuid4())
+    # generate per-user salt and store as sha512$<salt>$<hash>
+    salt = uuid.uuid4().hex
+    pw_hash_raw = hashlib.sha512((salt + password).encode('utf-8')).hexdigest()
+    pw_hash = f"sha512${salt}${pw_hash_raw}"
+    filename = 'default.jpg'
+    db.execute('INSERT INTO users (userid, username, fullname, email, filename, password) VALUES (?, ?, ?, ?, ?, ?)', (userid, username, fullname, email, filename, pw_hash))
+    db.commit()
+    user = {'id': userid, 'username': username, 'displayName': fullname, 'avatarURL': request.host_url.rstrip('/') + '/uploads/' + filename}
+    logger.info('user created: username=%s userId=%s', username, userid)
+    return jsonify(user), 201
+
+
+@app.route('/users/<user_id>', methods=['PUT'])
+def update_user(user_id):
+    username = get_username_from_token(request)
+    if not username:
+        abort(403)
+    db = get_db()
+    row = db.execute('SELECT userid, username FROM users WHERE userid = ?', (user_id,)).fetchone()
+    if not row:
+        abort(404)
+    if row['username'] != username:
+        abort(403)
+    data = request.get_json() or {}
+    fullname = data.get('fullname')
+    email = data.get('email')
+    updates = []
+    params = []
+    if fullname is not None:
+        updates.append('fullname = ?')
+        params.append(fullname)
+    if email is not None:
+        updates.append('email = ?')
+        params.append(email)
+    if updates:
+        params.append(username)
+        sql = 'UPDATE users SET ' + ', '.join(updates) + ' WHERE username = ?'
+        db.execute(sql, params)
+        db.commit()
+    newrow = db.execute('SELECT userid, username, fullname, filename FROM users WHERE userid = ?', (user_id,)).fetchone()
+    user = {'id': newrow['userid'], 'username': newrow['username'], 'displayName': newrow['fullname'], 'avatarURL': request.host_url.rstrip('/') + '/uploads/' + (newrow['filename'] or 'default.jpg')}
     return jsonify(user)
 
 

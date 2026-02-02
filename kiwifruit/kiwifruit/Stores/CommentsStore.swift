@@ -3,7 +3,7 @@ import Observation
 import SwiftUI
 
 /// Simple comments store persisted in UserDefaults. Suitable for prototype/local usage.
-@Observable
+@Observable @MainActor
 final class CommentsStore {
     private let key = "kiwifruit.comments"
     private(set) var commentsByPost: [UUID: [Comment]] = [:]
@@ -14,10 +14,35 @@ final class CommentsStore {
         commentsByPost[post.id] ?? []
     }
 
-    func addComment(_ text: String, post: Post, author: User) {
+    func addLocalComment(_ text: String, post: Post, author: User) {
         let c = Comment(id: UUID(), postId: post.id, author: author, text: text, createdAt: Date())
         commentsByPost[post.id, default: []].append(c)
         save()
+    }
+
+    func fetchForPost(_ post: Post) async {
+        do {
+            let fetched = try await APIClient.shared.fetchComments(postId: post.id)
+            commentsByPost[post.id] = fetched
+            save()
+        } catch {
+            // ignore fetch errors for now; keep local comments
+            print("fetchForPost failed: \(error)")
+        }
+    }
+
+    func createComment(_ text: String, post: Post, author: User?) async {
+        do {
+            try await APIClient.shared.createComment(postId: post.id, text: text)
+            // refresh comments from server
+            await fetchForPost(post)
+        } catch {
+            print("createComment failed: \(error)")
+            // fallback to local add
+            if let author = author {
+                addLocalComment(text, post: post, author: author)
+            }
+        }
     }
 
     private func save() {

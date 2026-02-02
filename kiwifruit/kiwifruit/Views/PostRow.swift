@@ -4,6 +4,7 @@ struct PostRow: View {
     let post: Post
     @Environment(\.likesStore) private var likesStore: LikesStore
     @Environment(\.postsStore) private var postsStore: PostsStore
+    @Environment(\.sessionStore) private var session: SessionStore
     @State private var showingComments = false
 
     // Whether current device/user liked this post (local store)
@@ -66,6 +67,15 @@ struct PostRow: View {
                         .foregroundStyle(isLiked ? .red : .primary)
                 }
 
+                if session.userId == post.author.id {
+                    Spacer()
+                    Button(role: .destructive) {
+                        Task { await deletePost() }
+                    } label: {
+                        Label("Delete", systemImage: "trash")
+                    }
+                }
+
                 Text("\(displayedLikes) likes")
                     .font(.subheadline)
 
@@ -109,6 +119,15 @@ struct PostRow: View {
             // On failure, rollback local optimistic like
             likesStore.toggle(post)
             print("Like/unlike failed: \(error)")
+        }
+    }
+
+    private func deletePost() async {
+        do {
+            try await APIClient.shared.deletePost(post.id)
+            postsStore.removePost(postId: post.id)
+        } catch {
+            print("deletePost failed: \(error)")
         }
     }
 }
