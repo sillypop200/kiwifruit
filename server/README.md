@@ -1,0 +1,20 @@
+This folder contains a minimal Flask example server for local development.
+
+Setup
+- Create a virtualenv and install dependencies:
+
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+```
+
+- Initialize the SQLite database and start the server:
+
+```bash
+python app.py
+```
+
+Notes
+- Database schema is in `schema.sql`. On first run the server will create `kiwifruit.db`.
+- Uploaded images are saved to `uploads/` and served at `/uploads/<filename>`.
