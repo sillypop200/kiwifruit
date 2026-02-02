@@ -73,10 +73,10 @@ final class RESTAPIClient: APIClientProtocol {
     }
 
     func fetchPosts(page: Int, pageSize: Int) async throws -> [Post] {
-        // Use API v1 posts endpoint (returns snake_case fields)
-        var comps = URLComponents(url: baseURL.appendingPathComponent("/api/posts"), resolvingAgainstBaseURL: false)!
+        var comps = URLComponents(url: baseURL.appendingPathComponent("/posts"), resolvingAgainstBaseURL: false)!
         comps.queryItems = [
-            URLQueryItem(name: "limit", value: String(pageSize))
+            URLQueryItem(name: "page", value: String(page)),
+            URLQueryItem(name: "pageSize", value: String(pageSize))
         ]
         var req = URLRequest(url: comps.url!)
         if let token = authToken {
@@ -90,7 +90,7 @@ final class RESTAPIClient: APIClientProtocol {
     }
 
     func createPost(authorId: UUID, imageData: Data?, caption: String?) async throws -> Post {
-        let url = baseURL.appendingPathComponent("/api/posts")
+        let url = baseURL.appendingPathComponent("/posts")
         var req = URLRequest(url: url)
         req.httpMethod = "POST"
         if let token = authToken {
@@ -128,7 +128,7 @@ final class RESTAPIClient: APIClientProtocol {
             req.addValue("application/json", forHTTPHeaderField: "Content-Type")
             var body: [String: Any] = [:]
             if let caption = caption { body["caption"] = caption }
-            // No local image data -> allow sending external image_url later if needed
+            // Note: legacy server /posts expects multipart uploads; sending JSON without a file may be rejected.
             req.httpBody = try JSONSerialization.data(withJSONObject: body)
         }
 
@@ -152,24 +152,26 @@ final class RESTAPIClient: APIClientProtocol {
     }
 
     func likePost(_ postId: UUID) async throws -> Int {
-        let url = baseURL.appendingPathComponent("/api/posts/\(postId)/like")
+        let url = baseURL.appendingPathComponent("/posts/\(postId)/like")
         var req = URLRequest(url: url)
         req.httpMethod = "POST"
         if let token = authToken { req.addValue("Bearer \(token)", forHTTPHeaderField: "Authorization") }
         let (data, _) = try await session.data(for: req)
         let decoded = try JSONSerialization.jsonObject(with: data) as? [String: Any]
         if let likes = decoded?["like_count"] as? Int { return likes }
+        if let likes = decoded?["likes"] as? Int { return likes }
         throw URLError(.badServerResponse)
     }
 
     func unlikePost(_ postId: UUID) async throws -> Int {
-        let url = baseURL.appendingPathComponent("/api/posts/\(postId)/like")
+        let url = baseURL.appendingPathComponent("/posts/\(postId)/like")
         var req = URLRequest(url: url)
         req.httpMethod = "DELETE"
         if let token = authToken { req.addValue("Bearer \(token)", forHTTPHeaderField: "Authorization") }
         let (data, _) = try await session.data(for: req)
         let decoded = try JSONSerialization.jsonObject(with: data) as? [String: Any]
         if let likes = decoded?["like_count"] as? Int { return likes }
+        if let likes = decoded?["likes"] as? Int { return likes }
         throw URLError(.badServerResponse)
     }
 
