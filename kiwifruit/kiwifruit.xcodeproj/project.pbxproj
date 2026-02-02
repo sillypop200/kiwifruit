@@ -8,23 +8,23 @@
 
 /* Begin PBXFileReference section */
 		3E766B9E2F2C5EF500A95C1B /* kiwifruit.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = kiwifruit.app; sourceTree = BUILT_PRODUCTS_DIR; };
-		4E766B952F2C5EF500A95C20 /* kiwifruitApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = kiwifruit/kiwifruit/kiwifruit/Views/kiwifruitApp.swift; sourceTree = "<group>"; };
-		4E766B952F2C5EF500A95C21 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = kiwifruit/kiwifruit/kiwifruit/Views/ContentView.swift; sourceTree = "<group>"; };
-		4E766B952F2C5EF500A95C22 /* CreatePostView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = kiwifruit/kiwifruit/kiwifruit/Views/CreatePostView.swift; sourceTree = "<group>"; };
-		4E766B952F2C5EF500A95C23 /* CommentsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = kiwifruit/kiwifruit/kiwifruit/Views/CommentsView.swift; sourceTree = "<group>"; };
-		4E766B952F2C5EF500A95C24 /* FeedViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = kiwifruit/kiwifruit/kiwifruit/FeedViewModel.swift; sourceTree = "<group>"; };
-		4E766B952F2C5EF500A95C25 /* LoginView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = kiwifruit/kiwifruit/kiwifruit/Views/LoginView.swift; sourceTree = "<group>"; };
-		4E766B952F2C5EF500A95C26 /* Services/APIClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = kiwifruit/kiwifruit/kiwifruit/Services/APIClient.swift; sourceTree = "<group>"; };
-		4E766B952F2C5EF500A95C27 /* Models/Models.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = kiwifruit/kiwifruit/kiwifruit/Models/Models.swift; sourceTree = "<group>"; };
-		4E766B952F2C5EF500A95C28 /* Models/MockData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = kiwifruit/kiwifruit/kiwifruit/Models/MockData.swift; sourceTree = "<group>"; };
-		4E766B952F2C5EF500A95C29 /* Stores/CommentsStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = kiwifruit/kiwifruit/kiwifruit/Stores/CommentsStore.swift; sourceTree = "<group>"; };
-		4E766B952F2C5EF500A95C2A /* Stores/LikesStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = kiwifruit/kiwifruit/kiwifruit/Stores/LikesStore.swift; sourceTree = "<group>"; };
-		4E766B952F2C5EF500A95C2B /* Stores/PostsStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = kiwifruit/kiwifruit/kiwifruit/Stores/PostsStore.swift; sourceTree = "<group>"; };
-		4E766B952F2C5EF500A95C2C /* Stores/SessionStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = kiwifruit/kiwifruit/kiwifruit/Stores/SessionStore.swift; sourceTree = "<group>"; };
-		4E766B952F2C5EF500A95C2D /* FeedView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = kiwifruit/kiwifruit/kiwifruit/Views/FeedView.swift; sourceTree = "<group>"; };
-		4E766B952F2C5EF500A95C2E /* PostRow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = kiwifruit/kiwifruit/kiwifruit/Views/PostRow.swift; sourceTree = "<group>"; };
-		4E766B952F2C5EF500A95C2F /* ProfileView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = kiwifruit/kiwifruit/kiwifruit/Views/ProfileView.swift; sourceTree = "<group>"; };
-		4E766B952F2C5EF500A95C30 /* Assets.xcassets */ = {isa = PBXFileReference; explicitFileType = folder.assetcatalog; path = kiwifruit/kiwifruit/kiwifruit/Assets.xcassets; sourceTree = "<group>"; };
+		4E766B952F2C5EF500A95C20 /* kiwifruitApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = kiwifruit/Views/kiwifruitApp.swift; sourceTree = "<group>"; };
+		4E766B952F2C5EF500A95C21 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = kiwifruit/Views/ContentView.swift; sourceTree = "<group>"; };
+		4E766B952F2C5EF500A95C22 /* CreatePostView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = kiwifruit/Views/CreatePostView.swift; sourceTree = "<group>"; };
+		4E766B952F2C5EF500A95C23 /* CommentsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = kiwifruit/Views/CommentsView.swift; sourceTree = "<group>"; };
+		4E766B952F2C5EF500A95C24 /* FeedViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = kiwifruit/FeedViewModel.swift; sourceTree = "<group>"; };
+		4E766B952F2C5EF500A95C25 /* LoginView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = kiwifruit/Views/LoginView.swift; sourceTree = "<group>"; };
+		4E766B952F2C5EF500A95C26 /* Services/APIClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = kiwifruit/Services/APIClient.swift; sourceTree = "<group>"; };
+		4E766B952F2C5EF500A95C27 /* Models/Models.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = kiwifruit/Models/Models.swift; sourceTree = "<group>"; };
+		4E766B952F2C5EF500A95C28 /* Models/MockData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = kiwifruit/Models/MockData.swift; sourceTree = "<group>"; };
+		4E766B952F2C5EF500A95C29 /* Stores/CommentsStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = kiwifruit/Stores/CommentsStore.swift; sourceTree = "<group>"; };
+		4E766B952F2C5EF500A95C2A /* Stores/LikesStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = kiwifruit/Stores/LikesStore.swift; sourceTree = "<group>"; };
+		4E766B952F2C5EF500A95C2B /* Stores/PostsStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = kiwifruit/Stores/PostsStore.swift; sourceTree = "<group>"; };
+		4E766B952F2C5EF500A95C2C /* Stores/SessionStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = kiwifruit/Stores/SessionStore.swift; sourceTree = "<group>"; };
+		4E766B952F2C5EF500A95C2D /* FeedView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = kiwifruit/Views/FeedView.swift; sourceTree = "<group>"; };
+		4E766B952F2C5EF500A95C2E /* PostRow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = kiwifruit/Views/PostRow.swift; sourceTree = "<group>"; };
+		4E766B952F2C5EF500A95C2F /* ProfileView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = kiwifruit/Views/ProfileView.swift; sourceTree = "<group>"; };
+		4E766B952F2C5EF500A95C30 /* Assets.xcassets */ = {isa = PBXFileReference; explicitFileType = folder.assetcatalog; path = kiwifruit/Assets.xcassets; sourceTree = "<group>"; };
 	/* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
