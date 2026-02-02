@@ -3,10 +3,13 @@ import SwiftUI
 struct ProfileView: View {
     let user: User
 
-    // For demo we reuse MockData
-    private var posts: [Post] { MockData.makePosts(count: 12, page: 0) }
+    @Environment(\.postsStore) private var postsStore: PostsStore
+    // Show posts authored by this user from the shared posts store
+    private var posts: [Post] { postsStore.posts(for: user) }
 
     private let columns = [GridItem(.flexible()), GridItem(.flexible())]
+    @Environment(\.sessionStore) private var session: SessionStore
+    @State private var showingLogin = false
 
     var body: some View {
         ScrollView {
@@ -36,6 +39,15 @@ struct ProfileView: View {
                     Spacer()
                 }
 
+                if session.userId == nil {
+                    Button("Sign In") { showingLogin = true }
+                        .buttonStyle(.borderedProminent)
+                        .tint(.green)
+                } else if session.userId == user.id {
+                    Button("Sign Out") { session.clear() }
+                        .buttonStyle(.bordered)
+                }
+
                 Text("Posts")
                     .font(.headline)
 
@@ -62,6 +74,9 @@ struct ProfileView: View {
             .padding()
         }
         .navigationTitle(user.displayName ?? user.username)
+        .sheet(isPresented: $showingLogin) {
+            LoginView()
+        }
     }
 }
 

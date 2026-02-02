@@ -1,10 +1,12 @@
 import SwiftUI
+import PhotosUI
 
 struct CreatePostView: View {
     @Environment(\.sessionStore) private var session: SessionStore
-    @Environment(\.dismiss) private var dismiss
+        @Environment(\.postsStore) private var postsStore: PostsStore
     @Binding var isPresented: Bool
-    @State private var imageURLText: String = ""
+    @State private var selectedItem: PhotosPickerItem? = nil
+    @State private var selectedImageData: Data? = nil
     @State private var caption: String = ""
     @State private var isSubmitting = false
     var onCreated: (Post) -> Void
@@ -13,9 +15,28 @@ struct CreatePostView: View {
         NavigationStack {
             Form {
                 Section(header: Text("Image")) {
-                    TextField("Image URL", text: $imageURLText)
-                        .keyboardType(.URL)
-                        .autocapitalization(.none)
+                    PhotosPicker(selection: $selectedItem, matching: .images, photoLibrary: .shared()) {
+                        HStack {
+                            if let data = selectedImageData, let ui = UIImage(data: data) {
+                                Image(uiImage: ui)
+                                    .resizable()
+                                    .scaledToFit()
+                                    .frame(height: 120)
+                                    .cornerRadius(8)
+                            } else {
+                                Label("Choose Photo", systemImage: "photo.on.rectangle")
+                            }
+                        }
+                    }
+                    .onChange(of: selectedItem) { newItem in
+                        Task {
+                            if let item = newItem {
+                                if let data = try? await item.loadTransferable(type: Data.self) {
+                                    selectedImageData = data
+                                }
+                            }
+                        }
+                    }
                 }
 
                 Section(header: Text("Caption")) {
@@ -32,7 +53,7 @@ struct CreatePostView: View {
                         Button("Post") {
                             Task { await submit() }
                         }
-                        .disabled(imageURLText.isEmpty)
+                        .disabled(selectedImageData == nil || session.userId == nil)
                     }
                 }
 
@@ -44,14 +65,15 @@ struct CreatePostView: View {
     }
 
     private func submit() async {
-        guard let url = URL(string: imageURLText) else { return }
         guard let userId = session.userId else { return }
         isSubmitting = true
         defer { isSubmitting = false }
         do {
-            let created = try await APIClient.shared.createPost(authorId: userId, imageURL: url, caption: caption.isEmpty ? nil : caption)
-            onCreated(created)
-            isPresented = false
+              let created = try await APIClient.shared.createPost(authorId: userId, imageData: selectedImageData, caption: caption.isEmpty ? nil : caption)
+              // Persist locally to shared posts store and call callback
+              postsStore.prepend(created)
+              onCreated(created)
+              isPresented = false
         } catch {
             print("Failed to create post: \(error)")
         }

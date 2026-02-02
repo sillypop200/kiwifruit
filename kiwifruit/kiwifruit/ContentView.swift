@@ -13,20 +13,29 @@ struct ContentView: View {
             NavigationStack {
                 FeedView()
             }
-            .tabItem {
-                Label("Home", systemImage: "house.fill")
-            }
+            .tabItem { Label("Home", systemImage: "house.fill") }
 
             NavigationStack {
                 ProfileView(user: MockData.sampleUser)
             }
-            .tabItem {
-                Label("Profile", systemImage: "person.crop.circle")
+            .tabItem { Label("Profile", systemImage: "person.crop.circle") }
+
+            NavigationStack {
+                Text("Challenges coming soon")
+                    .foregroundColor(.secondary)
             }
+            .tabItem { Label("Challenges", systemImage: "flag") }
+
+            NavigationStack {
+                Text("Focus timer")
+                    .foregroundColor(.secondary)
+            }
+            .tabItem { Label("Focus", systemImage: "timer") }
         }
-        .accentColor(.green)
+        .tint(.green)
         .environment(\.likesStore, LikesStore())
         .environment(\.sessionStore, SessionStore())
+        .environment(\.postsStore, PostsStore())
     }
 }
 
