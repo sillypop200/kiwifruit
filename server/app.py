@@ -4,6 +4,7 @@ import sqlite3
 import logging
 from datetime import datetime, timezone
 from flask import Flask, request, jsonify, g, abort, send_from_directory
+from werkzeug.exceptions import HTTPException
 
 BASE_DIR = os.path.dirname(__file__)
 DB_PATH = os.path.join(BASE_DIR, 'kiwifruit.db')
@@ -274,6 +275,18 @@ def get_user(user_id):
         'avatarURL': request.host_url.rstrip('/') + '/uploads/' + (row['filename'] or 'default.jpg')
     }
     return jsonify(user)
+
+
+@app.errorhandler(HTTPException)
+def handle_http_exception(e: HTTPException):
+    response = {'error': e.description, 'code': e.code}
+    return jsonify(response), e.code
+
+
+@app.errorhandler(Exception)
+def handle_exception(e):
+    logger.exception('Unhandled exception: %s', e)
+    return jsonify({'error': 'internal_server_error', 'message': str(e)}), 500
 
 def get_username_from_token(req):
     auth = req.headers.get('Authorization')

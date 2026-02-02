@@ -132,11 +132,23 @@ final class RESTAPIClient: APIClientProtocol {
             req.httpBody = try JSONSerialization.data(withJSONObject: body)
         }
 
-        let (data, _) = try await session.data(for: req)
+        let (data, resp) = try await session.data(for: req)
+        if let http = resp as? HTTPURLResponse, !(200...299).contains(http.statusCode) {
+            let body = String(data: data, encoding: .utf8) ?? "<non-utf8>"
+            print("createPost failed: HTTP \(http.statusCode) body: \(body)")
+            throw URLError(.badServerResponse)
+        }
         let decoder = JSONDecoder()
         decoder.keyDecodingStrategy = .convertFromSnakeCase
         decoder.dateDecodingStrategy = .iso8601
-        return try decoder.decode(Post.self, from: data)
+        do {
+            return try decoder.decode(Post.self, from: data)
+        } catch {
+            // Log raw response to help diagnose non-JSON or shape mismatches
+            let body = String(data: data, encoding: .utf8) ?? "<non-utf8>"
+            print("createPost decode error: \(error) -- response body: \(body)")
+            throw error
+        }
     }
 
     func likePost(_ postId: UUID) async throws -> Int {
