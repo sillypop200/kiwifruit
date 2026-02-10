@@ -12,5 +12,6 @@ Backend REST API for the kiwifruit social reading app, built with Flask and SQLi
    :maxdepth: 2
    :caption: Contents:
 
+   overview
    api
 
