@@ -22,6 +22,7 @@ release = '0.0'
 extensions = [
     'sphinx.ext.autodoc',
     'sphinx.ext.viewcode',  # adds "View source" links
+    'sphinx_markdown_builder',
 ]
 
 templates_path = ['_templates']

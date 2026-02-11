@@ -4,3 +4,4 @@ gunicorn==20.1.0
 # Docs (dev only)
 sphinx==7.4.7
 sphinx-rtd-theme==2.0.0
+sphinx-markdown-builder
