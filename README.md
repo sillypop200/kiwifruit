@@ -1,53 +1,105 @@
-
 # KiwiFruit
 
-KiwiFruit is a SwiftUI iOS prototype that helps readers share short reflection posts about their reading sessions, track streaks and challenges, and stay focused. This repository contains a focused, easy-to-extend foundation you can connect to a Flask backend or iterate from Figma designs.
+**Connect directly with your friends and stay focused to reclaim your reading time.**
 
-Core features implemented (prototype)
-- Login flow (username-based, prototyped) with `SessionStore` and token persistence.
-- Create reflection posts using the device photo library (PhotosPicker) and multipart upload support.
-- Infinite-scroll social feed with shared `PostsStore` as single source of truth.
-- Profile page showing posts authored by a user.
-- Local persistent likes (optimistic UI) and comments (local persistence) with optional server sync endpoints.
-- Tabs scaffold: Home, Profile, Challenges, Focus (Challenges/Focus placeholders for future work).
+KiwiFruit is a social reading ecosystem that combines focus management, computer vision, and social accountability to help users build consistent reading habits. It addresses distracted reading by integrating focus tools, mood mapping to track emotional responses, and a social feed to share progress.
 
-Project layout (concise)
-- Models/: `Models.swift` (Post, User, Comment)
-- Services/: `APIClient.swift`, `SessionStore.swift`, `PostsStore.swift`, `LikesStore.swift`, `CommentsStore.swift`
-- Views/: `FeedView.swift`, `PostRow.swift`, `ProfileView.swift`, `CreatePostView.swift`, `LoginView.swift`, `CommentsView.swift`
-- Support: `MockData.swift`, `ApiSpec.md`, and README.
+The application is composed of a native iOS client (SwiftUI) and a Python backend (Flask).
 
-Key design notes (for future Figma integration)
-- Small focused views: each SwiftUI `View` is a single screen or cell (e.g., `PostRow` maps directly to a post component in Figma).
-- Central stores: `PostsStore`, `LikesStore`, `CommentsStore`, and `SessionStore` provide clear wiring points for state; map these to state tiles in your Figma documentation.
-- The networking layer is protocol-based (`APIClientProtocol`) so you can swap mocks for a REST client during integration testing.
+## Project Structure
 
-How to run locally
-1. Open the project in Xcode:
-```bash
-open kiwifruit.xcodeproj
-```
-2. Run on a simulator or device (iOS 16+ recommended). PhotosPicker works best on real device or simulator populated with photos.
-3. By default the app uses `MockAPIClient`. To point at your Flask backend, instantiate `SessionStore(baseURL:)` with your API URL and ensure `AppAPI.shared` is the `RESTAPIClient` (this is done automatically when `SessionStore` is initialized).
+The repository is organized into two main components: the iOS client and the backend server.
 
-API and backend notes
-- See `ApiSpec.md` for endpoint suggestions (posts, sessions, likes). A prototype Flask server is included in the spec with multipart upload and like endpoints.
-- Authentication: the prototype stores a simple token in `UserDefaults`. For production, migrate to Keychain and full auth flows.
+### iOS Client (kiwifruit/)
+The frontend is built using Swift and SwiftUI, utilizing an MVVM architecture with dedicated Stores for state management.
 
-Developer notes (how pieces connect)
-- `PostsStore` is the canonical feed source; `FeedView` and `ProfileView` read from it so new posts appear everywhere.
-- `CreatePostView` uploads images (multipart) and prepends the created `Post` into `PostsStore` so it appears at the top of the feed.
-- `PostRow` uses `LikesStore` for optimistic likes and calls `APIClient.likePost`/`unlikePost` to reconcile server counts; `PostsStore.updateLikes` applies server counts.
-- `CommentsStore` is local and simple for prototype comment storage; replace with server endpoints later.
+* **Views:** UI components including FeedView, PostDetailView, ProfileView, and Login/SignUpView.
+* **Stores:** State management handles are separated by domain:
+    * SessionStore.swift: Manages active reading sessions and timers.
+    * PostsStore.swift, LikesStore.swift, CommentsStore.swift: Manage social interactions and feed data.
+* **Services:** APIClient.swift handles networking and communication with the Flask backend.
+* **Models:** Data definitions (Models.swift) and mock data generation.
 
-Next steps / suggestions
-- Replace `UserDefaults` token storage with Keychain for security.
-- Implement server-side persistent storage and replace `MockAPIClient` with `RESTAPIClient(baseURL:)`.
-- Add image upload endpoint on the server (multipart/form-data) and return canonical `Post` JSON.
-- Add UI polish and theme tokens (Asset Catalog color `KiwiGreen`) to match your Figma designs.
+### Backend Server (server/)
+The backend is a Flask application managing data persistence and API endpoints.
 
-If you want, I can now:
-- Add a complete Flask example server implementing multipart upload, likes, and sessions.
-- Reorganize files into Xcode groups/folders and update the `.xcodeproj` to match.
-- Replace `UserDefaults` usage with Keychain for session tokens.
+* **app.py:** The entry point for the Flask application.
+* **Database:** Uses SQLite (kiwifruit.db) with a defined schema (schema.sql).
+* **Uploads:** Stores user-generated content and placeholder images.
+* **Utilities:** Includes scripts like reset_db_and_uploads.sh for database initialization.
 
+## Key Features
+
+### Social & Community
+* **Feed System:** View friends' reading sessions, status updates, and progress.
+* **Interactions:** Comment on and like posts regarding reading milestones.
+* **Profile Management:** Track personal reading history and streaks.
+
+### Reading & Focus
+* **Session Management:** A dedicated Orchestrator manages the state (idle, running, paused) of reading sessions.
+* **Focus Controller:** Integrates with iOS FamilyControls and ManagedSettings to block distracting apps during active sessions.
+* **Mood Map:** Uses Computer Vision (EmotiEffLib) to track user emotions during reading, creating a "Mood Map" of the experience.
+
+### Library & Intelligence
+* **Scan Pipeline:** Adds books via barcode scanning (AVFoundation) or OCR (Vision).
+* **Recommendation Engine:** Utilizes a multi-signal approach (history, behavior, friends) to suggest books.
+
+## Tech Stack
+
+### iOS Client
+* **Language:** Swift
+* **Framework:** SwiftUI
+* **Core Libraries:** AVFoundation (Scanning), Vision (OCR), FamilyControls (Focus).
+
+### Backend
+* **Language:** Python
+* **Framework:** Flask
+* **Database:** SQLite (Development/Current), SQL (Architecture).
+
+## Getting Started
+
+### Backend Setup
+1.  Navigate to the server directory:
+    ```bash
+    cd server
+    ```
+2.  Install dependencies:
+    ```bash
+    pip install -r requirements.txt
+    ```
+3.  Initialize the database:
+    ```bash
+    ./reset_db_and_uploads.sh
+    ```
+4.  Run the application:
+    ```bash
+    python app.py
+    ```
+
+### iOS Client Setup
+1.  Navigate to the project directory:
+    ```bash
+    cd kiwifruit
+    ```
+2.  Open the project in Xcode:
+    ```bash
+    open kiwifruit.xcodeproj
+    ```
+3.  Ensure the APIClient.swift is pointing to your local Flask server URL.
+4.  Build and run on a simulator or physical device.
+
+## Documentation
+* **API Specification:** Refer to kiwifruit/kiwifruit/ApiSpec.md for endpoint details.
+
+## Team
+
+| Name | Role | Focus Area |
+| :--- | :--- | :--- |
+| Anurag Krosuru | Backend, Full-Stack | Reading Sessions, Timer, Backend |
+| Savannah Brown | Backend, Full-Stack | Vision-based book recognition |
+| Zixiao Ma | Frontend, UI/UX | App Blocking Timer |
+| Tingrui Zhang | Computer Vision | Vision-based concentration/mood monitor |
+| Shawn Dong | UI/UX | UI Design, Mood extraction support |
+| Swesik Ramineni | Infrastructure, Backend | Speed reading, Home page UI |
+| Bonnie Huynh | UI/UX, Full-Stack | Book Recommendations, Rec Engine |
+| Varun Talluri | ML, Database Mgmt | Reading updates, Challenges, Streaks |
