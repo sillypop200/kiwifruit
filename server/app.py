@@ -20,6 +20,15 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("kiwifruit")
 
 def get_db():
+    """Return the SQLite database connection for the current app context.
+
+    Creates a new connection if one does not already exist, storing it on
+    Flask's ``g`` object so it is reused within the same request.
+    Rows are returned as :class:`sqlite3.Row` objects for dict-style access.
+
+    :returns: Active SQLite database connection.
+    :rtype: sqlite3.Connection
+    """
     db = getattr(g, '_database', None)
     if db is None:
         db = g._database = sqlite3.connect(DB_PATH)
@@ -28,11 +37,24 @@ def get_db():
 
 @app.teardown_appcontext
 def close_connection(exception):
+    """Close the database connection at the end of the app context.
+
+    Registered with Flask's teardown mechanism so it runs automatically
+    after each request or when the app context is popped.
+
+    :param exception: Any exception that triggered the teardown, or ``None``.
+    """
     db = getattr(g, '_database', None)
     if db is not None:
         db.close()
 
 def init_db():
+    """Initialize the database by executing ``schema.sql``.
+
+    Reads ``schema.sql`` from the same directory as this file and runs it
+    against the database inside an app context. Intended to be called once
+    on first run when no database file exists yet.
+    """
     with app.app_context():
         db = get_db()
         schema_path = os.path.join(BASE_DIR, 'schema.sql')
@@ -52,6 +74,17 @@ def _to_iso(ts):
 
 @app.route('/uploads/<path:filename>')
 def uploaded_file(filename):
+    """Serve an uploaded file, requiring authentication.
+
+    **GET** ``/uploads/<filename>``
+
+    :param filename: Path to the file inside the uploads folder.
+    :type filename: str
+    :returns: The requested file.
+    :status 200: File returned successfully.
+    :status 403: No valid session token provided.
+    :status 404: File not found on disk.
+    """
     # Require authentication to fetch uploaded files (P2 behavior)
     username = get_username_from_token(request)
     if not username:
@@ -64,6 +97,22 @@ def uploaded_file(filename):
 
 @app.route('/sessions', methods=['POST'])
 def create_session():
+    """Create a new session (login).
+
+    **POST** ``/sessions``
+
+    Accepts a JSON body with ``username`` and ``password``. Verifies the
+    password against the stored salted SHA-512 hash, generates a session
+    token, and returns it along with the authenticated user object.
+    Also sets an ``httponly`` session cookie for browser clients.
+
+    :json string username: Account username.
+    :json string password: Account password (plaintext, hashed server-side).
+    :returns: JSON with ``token`` (str) and ``user`` object.
+    :status 200: Login successful.
+    :status 400: Missing ``username`` or ``password``.
+    :status 403: Invalid credentials.
+    """
     data = request.get_json() or {}
     username = data.get('username')
     password = data.get('password')
@@ -108,6 +157,25 @@ def create_session():
 
 @app.route('/posts', methods=['GET', 'POST'])
 def posts_handler():
+    """Retrieve the paginated post feed or create a new post.
+
+    **GET** ``/posts``
+
+    Returns posts ordered by creation date descending.
+    Supports ``page`` (0-indexed, default 0) and ``pageSize`` (default 10)
+    query parameters. Authentication is not required to read posts.
+
+    **POST** ``/posts``
+
+    Creates a new post. Requires authentication. Expects a multipart form
+    with a ``file`` field (image) and an optional ``caption`` field.
+    The image is saved with a UUID-based filename to avoid collisions.
+
+    :returns: JSON list of post objects (GET) or the created post object (POST).
+    :status 200: Feed returned successfully.
+    :status 400: Missing file or empty filename (POST).
+    :status 403: Not authenticated (POST).
+    """
     db = get_db()
     if request.method == 'GET':
         page = int(request.args.get('page', 0))
@@ -170,6 +238,19 @@ def posts_handler():
 
 @app.route('/posts/<post_id>/like', methods=['POST', 'DELETE'])
 def post_like(post_id):
+    """Like or unlike a post.
+
+    **POST** ``/posts/<post_id>/like`` — Adds a like for the authenticated user.
+    If already liked, returns the current count without inserting a duplicate.
+
+    **DELETE** ``/posts/<post_id>/like`` — Removes the authenticated user's like.
+
+    :param post_id: ID of the post to like or unlike.
+    :type post_id: str
+    :returns: JSON with ``likes`` (int) — the updated total like count.
+    :status 200: Like count returned.
+    :status 403: Not authenticated.
+    """
     username = get_username_from_token(request)
     if not username:
         abort(403)
@@ -195,6 +276,20 @@ def post_like(post_id):
 
 @app.route('/posts/<post_id>', methods=['GET','DELETE'])
 def post_detail(post_id):
+    """Retrieve or delete a single post.
+
+    **GET** ``/posts/<post_id>`` — Returns the post object. No authentication required.
+
+    **DELETE** ``/posts/<post_id>`` — Deletes the post and its associated image file.
+    Requires authentication; only the post owner may delete it.
+
+    :param post_id: ID of the post.
+    :type post_id: str
+    :returns: JSON post object (GET) or ``{"status": "ok"}`` (DELETE).
+    :status 200: Success.
+    :status 403: Not authenticated or not the post owner (DELETE).
+    :status 404: Post not found.
+    """
     db = get_db()
     if request.method == 'GET':
         row = db.execute('SELECT p.postid, p.filename, p.owner, p.caption, p.created, u.username, u.fullname FROM posts p JOIN users u ON u.username = p.owner WHERE p.postid = ?', (post_id,)).fetchone()
@@ -232,6 +327,16 @@ def post_detail(post_id):
 
 @app.route('/posts/<post_id>/comments', methods=['GET'])
 def post_comments(post_id):
+    """Retrieve all comments for a post, ordered oldest first.
+
+    **GET** ``/posts/<post_id>/comments``
+
+    :param post_id: ID of the post whose comments to fetch.
+    :type post_id: str
+    :returns: JSON list of comment objects, each containing ``id``, ``author``,
+              ``text``, and ``createdAt`` (ISO 8601).
+    :status 200: Comments returned successfully.
+    """
     db = get_db()
     rows = db.execute('SELECT c.commentid, c.owner, c.text, c.created, u.username, u.fullname, u.filename FROM comments c JOIN users u ON u.username = c.owner WHERE c.postid = ? ORDER BY c.created ASC', (post_id,)).fetchall()
     comments = []
@@ -242,6 +347,23 @@ def post_comments(post_id):
 
 @app.route('/comments', methods=['POST'])
 def comments_handler():
+    """Create or delete a comment.
+
+    **POST** ``/comments``
+
+    Dispatches on the ``operation`` form field:
+
+    - ``create``: Adds a new comment. Requires ``text`` and ``postid`` form fields.
+    - ``delete``: Removes a comment. Requires ``commentid`` form field.
+      Only the comment owner may delete it.
+
+    Requires authentication for all operations.
+
+    :returns: JSON ``{"status": "ok"}`` on success.
+    :status 200: Operation completed.
+    :status 400: Missing required fields or unknown operation.
+    :status 403: Not authenticated, or attempting to delete another user's comment.
+    """
     username = get_username_from_token(request)
     if not username:
         abort(403)
@@ -272,6 +394,17 @@ def comments_handler():
 
 @app.route('/users/<username>', methods=['GET'])
 def get_user(username):
+    """Retrieve a user's public profile.
+
+    **GET** ``/users/<username>``
+
+    :param username: The username to look up.
+    :type username: str
+    :returns: JSON user object with ``id``, ``username``, ``displayName``,
+              and ``avatarURL``.
+    :status 200: User found and returned.
+    :status 404: User not found.
+    """
     db = get_db()
     row = db.execute('SELECT username, fullname, filename FROM users WHERE username = ?', (username,)).fetchone()
     if not row:
@@ -287,7 +420,23 @@ def get_user(username):
 
 @app.route('/users/<username>/follow', methods=['POST', 'DELETE'])
 def follow_user(username):
-    # POST to follow, DELETE to unfollow; requires auth
+    """Follow or unfollow a user.
+
+    **POST** ``/users/<username>/follow`` — Follow the specified user.
+    Silently succeeds if the relationship already exists.
+
+    **DELETE** ``/users/<username>/follow`` — Unfollow the specified user.
+
+    Requires authentication. A user cannot follow themselves.
+
+    :param username: The username of the user to follow or unfollow.
+    :type username: str
+    :returns: JSON ``{"status": "ok"}``.
+    :status 200: Operation completed.
+    :status 400: Attempting to follow yourself.
+    :status 403: Not authenticated.
+    :status 404: Target user not found.
+    """
     current = get_username_from_token(request)
     if not current:
         abort(403)
@@ -314,6 +463,16 @@ def follow_user(username):
 
 @app.route('/users/<username>/followers', methods=['GET'])
 def get_followers(username):
+    """Retrieve the list of users following the specified user.
+
+    **GET** ``/users/<username>/followers``
+
+    :param username: The username whose followers to retrieve.
+    :type username: str
+    :returns: JSON list of user objects, ordered by most-recently-followed first.
+    :status 200: Followers returned.
+    :status 404: User not found.
+    """
     db = get_db()
     if not db.execute('SELECT 1 FROM users WHERE username = ?', (username,)).fetchone():
         abort(404)
@@ -326,6 +485,16 @@ def get_followers(username):
 
 @app.route('/users/<username>/following', methods=['GET'])
 def get_following(username):
+    """Retrieve the list of users that the specified user is following.
+
+    **GET** ``/users/<username>/following``
+
+    :param username: The username whose following list to retrieve.
+    :type username: str
+    :returns: JSON list of user objects, ordered by most-recently-followed first.
+    :status 200: Following list returned.
+    :status 404: User not found.
+    """
     db = get_db()
     if not db.execute('SELECT 1 FROM users WHERE username = ?', (username,)).fetchone():
         abort(404)
@@ -338,6 +507,23 @@ def get_following(username):
 
 @app.route('/users', methods=['POST'])
 def create_user():
+    """Create a new user account.
+
+    **POST** ``/users``
+
+    Stores a salted SHA-512 password hash. Returns 409 if the username is
+    already taken.
+
+    :json string username: Desired username (required).
+    :json string password: Account password in plaintext (required, hashed server-side).
+    :json string fullname: Display name (optional, defaults to username).
+    :json string email: Email address (optional, defaults to ``<username>@example.com``).
+    :returns: JSON user object with ``id``, ``username``, ``displayName``,
+              and ``avatarURL``.
+    :status 201: User created successfully.
+    :status 400: Missing ``username`` or ``password``.
+    :status 409: Username already exists.
+    """
     data = request.get_json() or {}
     username = data.get('username')
     password = data.get('password')
@@ -363,6 +549,22 @@ def create_user():
 
 @app.route('/users/<username>', methods=['PUT'])
 def update_user(username):
+    """Update a user's profile information.
+
+    **PUT** ``/users/<username>``
+
+    Only the authenticated account owner may update their own profile.
+    Fields not present in the request body are left unchanged.
+
+    :param username: The username of the account to update.
+    :type username: str
+    :json string fullname: New display name (optional).
+    :json string email: New email address (optional).
+    :returns: JSON user object reflecting the updated profile.
+    :status 200: Profile updated and returned.
+    :status 403: Not authenticated or not the account owner.
+    :status 404: User not found.
+    """
     current = get_username_from_token(request)
     if not current:
         abort(403)
@@ -395,17 +597,43 @@ def update_user(username):
 
 @app.errorhandler(HTTPException)
 def handle_http_exception(e: HTTPException):
+    """Return a JSON error body for all HTTP exceptions.
+
+    Converts Werkzeug :class:`~werkzeug.exceptions.HTTPException` errors
+    (e.g. 400, 403, 404) into a consistent JSON response instead of HTML.
+
+    :param e: The HTTP exception raised.
+    :returns: JSON ``{"message": ..., "status_code": ...}`` with the matching status code.
+    """
     response = {'message': e.description, 'status_code': e.code}
     return jsonify(response), e.code
 
 
 @app.errorhandler(Exception)
 def handle_exception(e):
+    """Return a JSON 500 response for any unhandled exception.
+
+    Logs the full traceback and returns a generic error message to the client
+    so internal details are not exposed.
+
+    :param e: The unhandled exception.
+    :returns: JSON ``{"error": "internal_server_error", "message": ...}`` with status 500.
+    """
     logger.exception('Unhandled exception: %s', e)
     return jsonify({'error': 'internal_server_error', 'message': str(e)}), 500
 
 def get_username_from_token(req):
-    # Support either Authorization: Bearer <token> or cookie 'session'
+    """Resolve the authenticated username from a request's session token.
+
+    Checks the ``Authorization: Bearer <token>`` header first, then falls back
+    to the ``session`` cookie. Looks the token up in the ``sessions`` table.
+
+    :param req: The current Flask request object.
+    :type req: flask.Request
+    :returns: The username associated with the token, or ``None`` if the token
+              is missing or invalid.
+    :rtype: str or None
+    """
     auth = req.headers.get('Authorization')
     token = None
     if auth and auth.startswith('Bearer '):
