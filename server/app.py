@@ -162,6 +162,44 @@ def create_session():
     resp.set_cookie('session', token, httponly=True)
     return resp
 
+@app.route('/books/search', methods=['GET'])
+def search_books():
+    """Search for books by title/author/ISBN (stub).
+
+    **GET** `/books/search?q=<query>`
+
+    Returns a list of book results. This is currently a stub implementation
+    to support the iOS manual search workflow; it can later be replaced with
+    external API lookup (Open Library / Google Books) or a local books table.
+    """
+    q = (request.args.get('q') or '').strip()
+    if not q:
+        return jsonify([])
+
+    # Minimal stub results (deterministic-ish, safe for demos)
+    # Shape matches the iOS BookSearchResult model.
+    results = [
+        {
+            'id': uuid.uuid4().hex,
+            'title': f'{q} (Sample Result 1)',
+            'authors': ['Demo Author'],
+            'isbn13': None
+        },
+        {
+            'id': uuid.uuid4().hex,
+            'title': f'{q} (Sample Result 2)',
+            'authors': ['Kiwi Fruit', 'Savannah Brown'],
+            'isbn13': '9780000000002'
+        },
+        {
+            'id': uuid.uuid4().hex,
+            'title': f'{q} (Sample Result 3)',
+            'authors': None,
+            'isbn13': None
+        }
+    ]
+    return jsonify(results)
+
 @app.route('/posts', methods=['GET', 'POST'])
 def posts_handler():
     """Retrieve the paginated post feed or create a new post.
@@ -659,6 +697,7 @@ try:
     app.add_url_rule('/api/posts', endpoint='posts_handler_api', view_func=posts_handler, methods=['GET', 'POST'])
     app.add_url_rule('/api/posts/<post_id>', endpoint='post_detail_api', view_func=post_detail, methods=['GET', 'DELETE'])
     app.add_url_rule('/api/posts/<post_id>/like', endpoint='post_like_api', view_func=post_like, methods=['POST', 'DELETE'])
+    app.add_url_rule('/api/books/search', endpoint='search_books_api', view_func=search_books, methods=['GET'])
 except Exception:
     # if handlers are not defined yet during import-time, ignore
     pass
