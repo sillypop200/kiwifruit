@@ -146,3 +146,18 @@ server/kiwifruit.db
 
 # sphinx
 docs/build
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Database files
+*.db
+*.db-shm
+*.db-wal
+server/*.db
+
+# Xcode user-specific
+xcuserdata/
+*.xcworkspace
+!default.xcworkspace
