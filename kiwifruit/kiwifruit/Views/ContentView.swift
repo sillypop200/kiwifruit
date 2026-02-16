@@ -28,7 +28,7 @@ struct ContentView: View {
                 .tabItem { Label("Challenges", systemImage: "flag.checkered") }
                 .tag(2)
 
-            Text("Focus")
+            NavigationStack { FocusView() }
                 .tabItem { Label("Focus", systemImage: "leaf.fill") }
                 .tag(3)
         }
