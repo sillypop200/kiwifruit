@@ -22,9 +22,6 @@ This is a production-grade iOS reading application.
 Primary goals are smooth reading performance, strong offline support, modern Swift architecture, and high testability.  
 All code must follow modern Swift 6.2 best practices.
 
-### Citation Requirement
-**Please provide citation if any rules are provided by others, including LLMs. 10%**
-
 ### Citation  
 This LLM Rule is created based on Slide 10 and Slide 11 of C6.2-StoryMap. Some rules are adapted from the "LLM Prompts and Rule File" section. General principles are co-written with Claude.
 
