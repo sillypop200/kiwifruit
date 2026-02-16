@@ -13,21 +13,28 @@ struct DiscoverView: View {
     var body: some View {
         List {
             Section("Search books") {
-                TextField("Search by title, author, or ISBN", text: $bookSearchViewModel.query)
-                    .textInputAutocapitalization(.never)
-                    .autocorrectionDisabled()
-                    .submitLabel(.search)
-                    .onSubmit {
-                        Task { await bookSearchViewModel.submit() }
-                    }
+                HStack(spacing: 12) {
+                    TextField("Title, author, or ISBN", text: $bookSearchViewModel.query)
+                        .textInputAutocapitalization(.never)
+                        .autocorrectionDisabled()
+                        .submitLabel(.search)
+                        .textFieldStyle(.roundedBorder)
+                        .onSubmit {
+                            Task { await bookSearchViewModel.submit() }
+                        }
 
-                Button("Search") {
-                    Task { await bookSearchViewModel.submit() }
+                    Button {
+                        Task { await bookSearchViewModel.submit() }
+                    } label: {
+                        Text("Search")
+                            .font(.headline)
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .disabled(
+                        bookSearchViewModel.isSearching ||
+                        bookSearchViewModel.query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+                    )
                 }
-                .disabled(
-                    bookSearchViewModel.isSearching ||
-                    bookSearchViewModel.query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-                )
 
                 if bookSearchViewModel.isSearching {
                     ProgressView()
