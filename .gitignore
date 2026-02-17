@@ -155,6 +155,7 @@ dmypy.json
 
 # project specific
 server/kiwifruit.db
+server/uploads/
 
 # sphinx
 docs/build

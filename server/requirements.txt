@@ -1,7 +1,12 @@
 Flask==2.2.5
 gunicorn==20.1.0
+EbookLib==0.18
+beautifulsoup4==4.12.3
 
 # Docs (dev only)
 sphinx==7.4.7
 sphinx-rtd-theme==2.0.0
 sphinx-markdown-builder
+
+# Testing
+pytest==8.3.4
