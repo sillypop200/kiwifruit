@@ -17,11 +17,6 @@ final class BookSearchViewModel {
 
     func submit() async {
         let q = query.trimmingCharacters(in: .whitespacesAndNewlines)
-        if q.isEmpty {
-            results = []
-            errorMessage = nil
-            return
-        }
 
         isSearching = true
         errorMessage = nil
