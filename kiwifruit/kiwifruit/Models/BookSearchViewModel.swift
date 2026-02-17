@@ -16,17 +16,14 @@ final class BookSearchViewModel {
     }
 
     func submit() async {
-        let q = query.trimmingCharacters(in: .whitespacesAndNewlines)
-
         isSearching = true
         errorMessage = nil
         defer { isSearching = false }
 
         do {
-            results = try await api.searchBooks(query: q)
+            results = try await api.searchBooks(query: query)
         } catch {
-            results = []
-            errorMessage = "Search failed. Please try again."
+            errorMessage = "Failed to search books."
         }
     }
 }
