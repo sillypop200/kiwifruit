@@ -1,9 +1,3 @@
-//
-//  BookSearchViewModel.swift
-//  kiwifruit
-//
-//  Created by Savannah Brown on 2/15/26.
-//
 
 import Foundation
 import Observation
