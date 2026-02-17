@@ -25,6 +25,7 @@ protocol APIClientProtocol {
     func createComment(postId: String, text: String) async throws -> Void
     func deleteComment(commentId: String) async throws -> Void
     func deletePost(_ postId: String) async throws -> Void
+    func searchBooks(query: String) async throws -> [BookSearchResult]
 }
 
 /// Simple in-memory/mock client used in previews and when no backend is configured.
@@ -68,6 +69,20 @@ final class MockAPIClient: APIClientProtocol {
     func createComment(postId: String, text: String) async throws -> Void { try await Task.sleep(nanoseconds: 80 * 1_000_000); return }
     func deleteComment(commentId: String) async throws -> Void { try await Task.sleep(nanoseconds: 60 * 1_000_000); return }
     func deletePost(_ postId: String) async throws -> Void { try await Task.sleep(nanoseconds: 120 * 1_000_000); return }
+    func searchBooks(query: String) async throws -> [BookSearchResult] {
+        try await Task.sleep(nanoseconds: 120 * 1_000_000)
+        let trimmed = query.trimmingCharacters(in: .whitespacesAndNewlines)
+        if trimmed.isEmpty { return [] }
+
+        return [
+            BookSearchResult(
+                id: UUID().uuidString,
+                title: "Mock result for “\(trimmed)”",
+                authors: ["Kiwi Fruit"],
+                isbn13: nil
+            )
+        ]
+    }
 }
 
 /// A simple REST API client implementation using URLSession and async/await.
@@ -306,6 +321,34 @@ final class RESTAPIClient: APIClientProtocol {
 
     // Helper to normalize postid value if needed
     private func postidValue(_ id: String) -> String { return id }
+    
+    func searchBooks(query: String) async throws -> [BookSearchResult] {
+        let trimmed = query.trimmingCharacters(in: .whitespacesAndNewlines)
+        if trimmed.isEmpty { return [] }
+
+        var comps = URLComponents(
+            url: baseURL.appendingPathComponent("/books/search"),
+            resolvingAgainstBaseURL: false
+        )!
+        comps.queryItems = [URLQueryItem(name: "q", value: trimmed)]
+
+        var req = URLRequest(url: comps.url!)
+        if let token = authToken { req.addValue("Bearer \(token)", forHTTPHeaderField: "Authorization") }
+
+        debugLogRequest(req)
+        let (data, resp) = try await session.data(for: req)
+
+        if let http = resp as? HTTPURLResponse, !(200...299).contains(http.statusCode) {
+            let body = String(data: data, encoding: .utf8) ?? "<non-utf8>"
+            print("searchBooks failed HTTP \(http.statusCode): \(body)")
+            throw URLError(.badServerResponse)
+        }
+
+        let decoder = JSONDecoder()
+        decoder.keyDecodingStrategy = .convertFromSnakeCase
+        decoder.dateDecodingStrategy = .iso8601
+        return try decoder.decode([BookSearchResult].self, from: data)
+    }
 }
 
 enum AppAPI {

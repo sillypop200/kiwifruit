@@ -1,3 +1,15 @@
+# macOS
+.DS_Store
+
+# Python virtual environment
+server/.venv/
+
+# Xcode build artifacts
+DerivedData/
+build/
+*.xcuserstate
+*.xcworkspace/xcuserdata/
+*.xcodeproj/xcuserdata/
 # Xcode
 #
 # gitignore contributors: remember to update Global/Xcode.gitignore, Objective-C.gitignore & Swift.gitignore

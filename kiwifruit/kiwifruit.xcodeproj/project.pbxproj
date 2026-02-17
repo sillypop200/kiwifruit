@@ -6,26 +6,45 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		5E766B9A2F2C5EF500A95C40 /* kiwifruit/Views/kiwifruitApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4E766B952F2C5EF500A95C20 /* kiwifruit/Views/kiwifruitApp.swift */; };
+		5E766B9A2F2C5EF500A95C41 /* kiwifruit/Views/ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4E766B952F2C5EF500A95C21 /* kiwifruit/Views/ContentView.swift */; };
+		5E766B9A2F2C5EF500A95C42 /* kiwifruit/Views/CreatePostView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4E766B952F2C5EF500A95C22 /* kiwifruit/Views/CreatePostView.swift */; };
+		5E766B9A2F2C5EF500A95C43 /* kiwifruit/Views/CommentsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4E766B952F2C5EF500A95C23 /* kiwifruit/Views/CommentsView.swift */; };
+		5E766B9A2F2C5EF500A95C44 /* kiwifruit/FeedViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4E766B952F2C5EF500A95C24 /* kiwifruit/FeedViewModel.swift */; };
+		5E766B9A2F2C5EF500A95C45 /* kiwifruit/Views/LoginView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4E766B952F2C5EF500A95C25 /* kiwifruit/Views/LoginView.swift */; };
+		5E766B9A2F2C5EF500A95C46 /* kiwifruit/Services/APIClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4E766B952F2C5EF500A95C26 /* kiwifruit/Services/APIClient.swift */; };
+		5E766B9A2F2C5EF500A95C47 /* kiwifruit/Models/Models.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4E766B952F2C5EF500A95C27 /* kiwifruit/Models/Models.swift */; };
+		5E766B9A2F2C5EF500A95C48 /* kiwifruit/Models/MockData.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4E766B952F2C5EF500A95C28 /* kiwifruit/Models/MockData.swift */; };
+		5E766B9A2F2C5EF500A95C49 /* kiwifruit/Stores/CommentsStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4E766B952F2C5EF500A95C29 /* kiwifruit/Stores/CommentsStore.swift */; };
+		5E766B9A2F2C5EF500A95C4A /* kiwifruit/Stores/LikesStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4E766B952F2C5EF500A95C2A /* kiwifruit/Stores/LikesStore.swift */; };
+		5E766B9A2F2C5EF500A95C4B /* kiwifruit/Stores/PostsStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4E766B952F2C5EF500A95C2B /* kiwifruit/Stores/PostsStore.swift */; };
+		5E766B9A2F2C5EF500A95C4C /* kiwifruit/Stores/SessionStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4E766B952F2C5EF500A95C2C /* kiwifruit/Stores/SessionStore.swift */; };
+		5E766B9A2F2C5EF500A95C4D /* kiwifruit/Views/FeedView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4E766B952F2C5EF500A95C2D /* kiwifruit/Views/FeedView.swift */; };
+		5E766B9A2F2C5EF500A95C4E /* kiwifruit/Views/PostRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4E766B952F2C5EF500A95C2E /* kiwifruit/Views/PostRow.swift */; };
+		5E766B9A2F2C5EF500A95C4F /* kiwifruit/Views/ProfileView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4E766B952F2C5EF500A95C2F /* kiwifruit/Views/ProfileView.swift */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXFileReference section */
 		3E766B9E2F2C5EF500A95C1B /* kiwifruit.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = kiwifruit.app; sourceTree = BUILT_PRODUCTS_DIR; };
-		4E766B952F2C5EF500A95C20 /* kiwifruitApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = kiwifruit/Views/kiwifruitApp.swift; sourceTree = "<group>"; };
-		4E766B952F2C5EF500A95C21 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = kiwifruit/Views/ContentView.swift; sourceTree = "<group>"; };
-		4E766B952F2C5EF500A95C22 /* CreatePostView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = kiwifruit/Views/CreatePostView.swift; sourceTree = "<group>"; };
-		4E766B952F2C5EF500A95C23 /* CommentsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = kiwifruit/Views/CommentsView.swift; sourceTree = "<group>"; };
-		4E766B952F2C5EF500A95C24 /* FeedViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = kiwifruit/FeedViewModel.swift; sourceTree = "<group>"; };
-		4E766B952F2C5EF500A95C25 /* LoginView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = kiwifruit/Views/LoginView.swift; sourceTree = "<group>"; };
-		4E766B952F2C5EF500A95C26 /* Services/APIClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = kiwifruit/Services/APIClient.swift; sourceTree = "<group>"; };
-		4E766B952F2C5EF500A95C27 /* Models/Models.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = kiwifruit/Models/Models.swift; sourceTree = "<group>"; };
-		4E766B952F2C5EF500A95C28 /* Models/MockData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = kiwifruit/Models/MockData.swift; sourceTree = "<group>"; };
-		4E766B952F2C5EF500A95C29 /* Stores/CommentsStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = kiwifruit/Stores/CommentsStore.swift; sourceTree = "<group>"; };
-		4E766B952F2C5EF500A95C2A /* Stores/LikesStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = kiwifruit/Stores/LikesStore.swift; sourceTree = "<group>"; };
-		4E766B952F2C5EF500A95C2B /* Stores/PostsStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = kiwifruit/Stores/PostsStore.swift; sourceTree = "<group>"; };
-		4E766B952F2C5EF500A95C2C /* Stores/SessionStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = kiwifruit/Stores/SessionStore.swift; sourceTree = "<group>"; };
-		4E766B952F2C5EF500A95C2D /* FeedView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = kiwifruit/Views/FeedView.swift; sourceTree = "<group>"; };
-		4E766B952F2C5EF500A95C2E /* PostRow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = kiwifruit/Views/PostRow.swift; sourceTree = "<group>"; };
-		4E766B952F2C5EF500A95C2F /* ProfileView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = kiwifruit/Views/ProfileView.swift; sourceTree = "<group>"; };
-		4E766B952F2C5EF500A95C30 /* Assets.xcassets */ = {isa = PBXFileReference; explicitFileType = folder.assetcatalog; path = kiwifruit/Assets.xcassets; sourceTree = "<group>"; };
-	/* End PBXFileReference section */
+		4E766B952F2C5EF500A95C20 /* kiwifruit/Views/kiwifruitApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = kiwifruit/Views/kiwifruitApp.swift; sourceTree = "<group>"; };
+		4E766B952F2C5EF500A95C21 /* kiwifruit/Views/ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = kiwifruit/Views/ContentView.swift; sourceTree = "<group>"; };
+		4E766B952F2C5EF500A95C22 /* kiwifruit/Views/CreatePostView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = kiwifruit/Views/CreatePostView.swift; sourceTree = "<group>"; };
+		4E766B952F2C5EF500A95C23 /* kiwifruit/Views/CommentsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = kiwifruit/Views/CommentsView.swift; sourceTree = "<group>"; };
+		4E766B952F2C5EF500A95C24 /* kiwifruit/FeedViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = kiwifruit/FeedViewModel.swift; sourceTree = "<group>"; };
+		4E766B952F2C5EF500A95C25 /* kiwifruit/Views/LoginView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = kiwifruit/Views/LoginView.swift; sourceTree = "<group>"; };
+		4E766B952F2C5EF500A95C26 /* kiwifruit/Services/APIClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = kiwifruit/Services/APIClient.swift; sourceTree = "<group>"; };
+		4E766B952F2C5EF500A95C27 /* kiwifruit/Models/Models.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = kiwifruit/Models/Models.swift; sourceTree = "<group>"; };
+		4E766B952F2C5EF500A95C28 /* kiwifruit/Models/MockData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = kiwifruit/Models/MockData.swift; sourceTree = "<group>"; };
+		4E766B952F2C5EF500A95C29 /* kiwifruit/Stores/CommentsStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = kiwifruit/Stores/CommentsStore.swift; sourceTree = "<group>"; };
+		4E766B952F2C5EF500A95C2A /* kiwifruit/Stores/LikesStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = kiwifruit/Stores/LikesStore.swift; sourceTree = "<group>"; };
+		4E766B952F2C5EF500A95C2B /* kiwifruit/Stores/PostsStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = kiwifruit/Stores/PostsStore.swift; sourceTree = "<group>"; };
+		4E766B952F2C5EF500A95C2C /* kiwifruit/Stores/SessionStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = kiwifruit/Stores/SessionStore.swift; sourceTree = "<group>"; };
+		4E766B952F2C5EF500A95C2D /* kiwifruit/Views/FeedView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = kiwifruit/Views/FeedView.swift; sourceTree = "<group>"; };
+		4E766B952F2C5EF500A95C2E /* kiwifruit/Views/PostRow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = kiwifruit/Views/PostRow.swift; sourceTree = "<group>"; };
+		4E766B952F2C5EF500A95C2F /* kiwifruit/Views/ProfileView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = kiwifruit/Views/ProfileView.swift; sourceTree = "<group>"; };
+		4E766B952F2C5EF500A95C30 /* kiwifruit/Assets.xcassets */ = {isa = PBXFileReference; explicitFileType = folder.assetcatalog; path = kiwifruit/Assets.xcassets; sourceTree = "<group>"; };
+/* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		3E766BA02F2C5EF500A95C1B /* kiwifruit */ = {
@@ -50,23 +69,23 @@
 			isa = PBXGroup;
 			children = (
 				3E766BA02F2C5EF500A95C1B /* kiwifruit */,
-				4E766B952F2C5EF500A95C20 /* kiwifruitApp.swift */,
-				4E766B952F2C5EF500A95C21 /* ContentView.swift */,
-				4E766B952F2C5EF500A95C22 /* CreatePostView.swift */,
-				4E766B952F2C5EF500A95C23 /* CommentsView.swift */,
-				4E766B952F2C5EF500A95C24 /* FeedViewModel.swift */,
-				4E766B952F2C5EF500A95C25 /* LoginView.swift */,
-				4E766B952F2C5EF500A95C26 /* Services/APIClient.swift */,
-				4E766B952F2C5EF500A95C27 /* Models/Models.swift */,
-				4E766B952F2C5EF500A95C28 /* Models/MockData.swift */,
-				4E766B952F2C5EF500A95C29 /* Stores/CommentsStore.swift */,
-				4E766B952F2C5EF500A95C2A /* Stores/LikesStore.swift */,
-				4E766B952F2C5EF500A95C2B /* Stores/PostsStore.swift */,
-				4E766B952F2C5EF500A95C2C /* Stores/SessionStore.swift */,
-				4E766B952F2C5EF500A95C2D /* Views/FeedView.swift */,
-				4E766B952F2C5EF500A95C2E /* Views/PostRow.swift */,
-				4E766B952F2C5EF500A95C2F /* Views/ProfileView.swift */,
-				4E766B952F2C5EF500A95C30 /* Assets.xcassets */,
+				4E766B952F2C5EF500A95C20 /* kiwifruit/Views/kiwifruitApp.swift */,
+				4E766B952F2C5EF500A95C21 /* kiwifruit/Views/ContentView.swift */,
+				4E766B952F2C5EF500A95C22 /* kiwifruit/Views/CreatePostView.swift */,
+				4E766B952F2C5EF500A95C23 /* kiwifruit/Views/CommentsView.swift */,
+				4E766B952F2C5EF500A95C24 /* kiwifruit/FeedViewModel.swift */,
+				4E766B952F2C5EF500A95C25 /* kiwifruit/Views/LoginView.swift */,
+				4E766B952F2C5EF500A95C26 /* kiwifruit/Services/APIClient.swift */,
+				4E766B952F2C5EF500A95C27 /* kiwifruit/Models/Models.swift */,
+				4E766B952F2C5EF500A95C28 /* kiwifruit/Models/MockData.swift */,
+				4E766B952F2C5EF500A95C29 /* kiwifruit/Stores/CommentsStore.swift */,
+				4E766B952F2C5EF500A95C2A /* kiwifruit/Stores/LikesStore.swift */,
+				4E766B952F2C5EF500A95C2B /* kiwifruit/Stores/PostsStore.swift */,
+				4E766B952F2C5EF500A95C2C /* kiwifruit/Stores/SessionStore.swift */,
+				4E766B952F2C5EF500A95C2D /* kiwifruit/Views/FeedView.swift */,
+				4E766B952F2C5EF500A95C2E /* kiwifruit/Views/PostRow.swift */,
+				4E766B952F2C5EF500A95C2F /* kiwifruit/Views/ProfileView.swift */,
+				4E766B952F2C5EF500A95C30 /* kiwifruit/Assets.xcassets */,
 				3E766B9F2F2C5EF500A95C1B /* Products */,
 			);
 			sourceTree = "<group>";
@@ -153,47 +172,28 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				5E766B9A2F2C5EF500A95C40 /* kiwifruitApp.swift in Sources */,
-				5E766B9A2F2C5EF500A95C41 /* ContentView.swift in Sources */,
-				5E766B9A2F2C5EF500A95C42 /* CreatePostView.swift in Sources */,
-				5E766B9A2F2C5EF500A95C43 /* CommentsView.swift in Sources */,
-				5E766B9A2F2C5EF500A95C44 /* FeedViewModel.swift in Sources */,
-				5E766B9A2F2C5EF500A95C45 /* LoginView.swift in Sources */,
-				5E766B9A2F2C5EF500A95C46 /* Services/APIClient.swift in Sources */,
-				5E766B9A2F2C5EF500A95C47 /* Models/Models.swift in Sources */,
-				5E766B9A2F2C5EF500A95C48 /* Models/MockData.swift in Sources */,
-				5E766B9A2F2C5EF500A95C49 /* Stores/CommentsStore.swift in Sources */,
-				5E766B9A2F2C5EF500A95C4A /* Stores/LikesStore.swift in Sources */,
-				5E766B9A2F2C5EF500A95C4B /* Stores/PostsStore.swift in Sources */,
-				5E766B9A2F2C5EF500A95C4C /* Stores/SessionStore.swift in Sources */,
-				5E766B9A2F2C5EF500A95C4D /* Views/FeedView.swift in Sources */,
-				5E766B9A2F2C5EF500A95C4E /* Views/PostRow.swift in Sources */,
-				5E766B9A2F2C5EF500A95C4F /* Views/ProfileView.swift in Sources */,
+				5E766B9A2F2C5EF500A95C40 /* kiwifruit/Views/kiwifruitApp.swift in Sources */,
+				5E766B9A2F2C5EF500A95C41 /* kiwifruit/Views/ContentView.swift in Sources */,
+				5E766B9A2F2C5EF500A95C42 /* kiwifruit/Views/CreatePostView.swift in Sources */,
+				5E766B9A2F2C5EF500A95C43 /* kiwifruit/Views/CommentsView.swift in Sources */,
+				5E766B9A2F2C5EF500A95C44 /* kiwifruit/FeedViewModel.swift in Sources */,
+				5E766B9A2F2C5EF500A95C45 /* kiwifruit/Views/LoginView.swift in Sources */,
+				5E766B9A2F2C5EF500A95C46 /* kiwifruit/Services/APIClient.swift in Sources */,
+				5E766B9A2F2C5EF500A95C47 /* kiwifruit/Models/Models.swift in Sources */,
+				5E766B9A2F2C5EF500A95C48 /* kiwifruit/Models/MockData.swift in Sources */,
+				5E766B9A2F2C5EF500A95C49 /* kiwifruit/Stores/CommentsStore.swift in Sources */,
+				5E766B9A2F2C5EF500A95C4A /* kiwifruit/Stores/LikesStore.swift in Sources */,
+				5E766B9A2F2C5EF500A95C4B /* kiwifruit/Stores/PostsStore.swift in Sources */,
+				5E766B9A2F2C5EF500A95C4C /* kiwifruit/Stores/SessionStore.swift in Sources */,
+				5E766B9A2F2C5EF500A95C4D /* kiwifruit/Views/FeedView.swift in Sources */,
+				5E766B9A2F2C5EF500A95C4E /* kiwifruit/Views/PostRow.swift in Sources */,
+				5E766B9A2F2C5EF500A95C4F /* kiwifruit/Views/ProfileView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin XCBuildConfiguration section */
-
-	/* Begin PBXBuildFile section */
-		5E766B9A2F2C5EF500A95C40 /* kiwifruitApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4E766B952F2C5EF500A95C20 /* kiwifruitApp.swift */; };
-		5E766B9A2F2C5EF500A95C41 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4E766B952F2C5EF500A95C21 /* ContentView.swift */; };
-		5E766B9A2F2C5EF500A95C42 /* CreatePostView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4E766B952F2C5EF500A95C22 /* CreatePostView.swift */; };
-		5E766B9A2F2C5EF500A95C43 /* CommentsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4E766B952F2C5EF500A95C23 /* CommentsView.swift */; };
-		5E766B9A2F2C5EF500A95C44 /* FeedViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4E766B952F2C5EF500A95C24 /* FeedViewModel.swift */; };
-		5E766B9A2F2C5EF500A95C45 /* LoginView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4E766B952F2C5EF500A95C25 /* LoginView.swift */; };
-		5E766B9A2F2C5EF500A95C46 /* Services/APIClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4E766B952F2C5EF500A95C26 /* Services/APIClient.swift */; };
-		5E766B9A2F2C5EF500A95C47 /* Models/Models.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4E766B952F2C5EF500A95C27 /* Models/Models.swift */; };
-		5E766B9A2F2C5EF500A95C48 /* Models/MockData.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4E766B952F2C5EF500A95C28 /* Models/MockData.swift */; };
-		5E766B9A2F2C5EF500A95C49 /* Stores/CommentsStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4E766B952F2C5EF500A95C29 /* Stores/CommentsStore.swift */; };
-		5E766B9A2F2C5EF500A95C4A /* Stores/LikesStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4E766B952F2C5EF500A95C2A /* Stores/LikesStore.swift */; };
-		5E766B9A2F2C5EF500A95C4B /* Stores/PostsStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4E766B952F2C5EF500A95C2B /* Stores/PostsStore.swift */; };
-		5E766B9A2F2C5EF500A95C4C /* Stores/SessionStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4E766B952F2C5EF500A95C2C /* Stores/SessionStore.swift */; };
-		5E766B9A2F2C5EF500A95C4D /* Views/FeedView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4E766B952F2C5EF500A95C2D /* Views/FeedView.swift */; };
-		5E766B9A2F2C5EF500A95C4E /* Views/PostRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4E766B952F2C5EF500A95C2E /* Views/PostRow.swift */; };
-		5E766B9A2F2C5EF500A95C4F /* Views/ProfileView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4E766B952F2C5EF500A95C2F /* Views/ProfileView.swift */; };
-	/* End PBXBuildFile section */
 		3E766BA72F2C5EF700A95C1B /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {

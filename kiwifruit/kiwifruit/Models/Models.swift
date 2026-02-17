@@ -28,3 +28,10 @@ struct Comment: Identifiable, Codable, Hashable {
     let text: String
     let createdAt: Date
 }
+
+struct BookSearchResult: Identifiable, Codable, Hashable {
+    let id: String
+    let title: String
+    let authors: [String]?
+    let isbn13: String?
+}
